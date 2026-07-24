@@ -1,0 +1,105 @@
+.stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-lg);
+  margin: 0 0.75rem;
+  overflow: hidden;
+  transition: background 0.8s ease;
+  background: linear-gradient(180deg, #1e293b, #0f172a);
+}
+
+.stage[data-level="1"] {
+  background: linear-gradient(180deg, #fde68a, #fca5a5);
+}
+.stage[data-level="2"] {
+  background: linear-gradient(180deg, #bbf7d0, #60a5fa);
+}
+.stage[data-level="3"] {
+  background: linear-gradient(180deg, #312e81, #6d28d9);
+}
+.stage[data-level="4"] {
+  background: radial-gradient(circle at 50% 20%, #1e1b4b, #020617 75%);
+}
+.stage[data-negative="true"] {
+  background: linear-gradient(180deg, #0c4a6e, #082f49);
+}
+
+.topBar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: calc(0.6rem + var(--safe-top)) 0.75rem 0.5rem;
+  flex-wrap: wrap;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1rem, 3vw, 1.3rem);
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.topActions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.iconButton {
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
+  border-radius: 999px;
+  border: none;
+  background: rgba(15, 23, 42, 0.45);
+  color: #fff;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
+.iconButton:hover {
+  background: rgba(15, 23, 42, 0.65);
+}
+
+.displayCard {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(6px);
+  border-radius: var(--radius-md);
+  padding: 0.4rem 0.9rem;
+  margin: 0 0.75rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.characterArea {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+}
+
+.message {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.75);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  max-width: 90%;
+  text-align: center;
+}
