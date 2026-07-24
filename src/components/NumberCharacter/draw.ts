@@ -1,4 +1,14 @@
 import type { VisualLevel } from "../../engine/visualLevel";
+import {
+  type ColorPlan,
+  RAINBOW_SEQUENCE,
+  MILESTONE_BASE,
+  MILESTONE_ACCENT,
+  coldTint,
+  factorGrid,
+  countBlockColors,
+  placeColorPlan,
+} from "../../engine/numberPalette";
 
 export type Expression = "happy" | "excited" | "cold" | "awe";
 
@@ -15,24 +25,19 @@ export interface DrawParams {
   hueSeed: number; // 0..1 deterministic seed for cosmic color variety
 }
 
-const BLOCK_PALETTE = [
-  "#f97316",
-  "#facc15",
-  "#4ade80",
-  "#22d3ee",
-  "#60a5fa",
-  "#a78bfa",
-  "#f472b6",
-  "#fb7185",
-  "#34d399",
-  "#fbbf24",
-];
-
-const COLD_PALETTE = ["#0ea5e9", "#38bdf8", "#7dd3fc", "#bae6fd"];
-
-function colorFor(index: number, isNegative: boolean): string {
-  if (isNegative) return COLD_PALETTE[index % COLD_PALETTE.length];
-  return BLOCK_PALETTE[index % BLOCK_PALETTE.length];
+/** Resolves a ColorPlan (+ position within its group, for rainbow cycling) to actual paint colors. */
+function resolveBlockColor(plan: ColorPlan, indexInGroup: number, isNegative: boolean): { fill: string; outline?: string } {
+  if (plan.kind === "rainbow") {
+    const hue = RAINBOW_SEQUENCE[indexInGroup % RAINBOW_SEQUENCE.length];
+    return { fill: isNegative ? coldTint(hue) : hue };
+  }
+  if (plan.kind === "milestone") {
+    return {
+      fill: isNegative ? coldTint(MILESTONE_BASE, 0.35) : MILESTONE_BASE,
+      outline: isNegative ? coldTint(MILESTONE_ACCENT) : MILESTONE_ACCENT,
+    };
+  }
+  return { fill: isNegative ? coldTint(plan.color) : plan.color };
 }
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
@@ -51,7 +56,7 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
  * bold dark outline — the numbered-stacked-block look, drawn entirely with
  * shapes/gradients (no image assets).
  */
-function drawToyBlock(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string) {
+function drawToyBlock(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string, outlineColor?: string) {
   const radius = Math.min(w, h) * 0.22;
   roundRect(ctx, x, y, w, h, radius);
   ctx.fillStyle = color;
@@ -68,8 +73,30 @@ function drawToyBlock(ctx: CanvasRenderingContext2D, x: number, y: number, w: nu
   ctx.restore();
 
   roundRect(ctx, x, y, w, h, radius);
-  ctx.strokeStyle = "rgba(17,24,39,0.85)";
-  ctx.lineWidth = Math.max(1.6, Math.min(w, h) * 0.055);
+  ctx.strokeStyle = outlineColor ?? "rgba(17,24,39,0.85)";
+  ctx.lineWidth = Math.max(1.6, Math.min(w, h) * (outlineColor ? 0.09 : 0.055));
+  ctx.stroke();
+}
+
+/** Simple, mobile eyebrow above one eye — the main way expressions read as "alive". */
+function drawEyebrow(
+  ctx: CanvasRenderingContext2D,
+  ex: number,
+  eyeY: number,
+  eyeRadius: number,
+  dir: -1 | 1,
+  expression: Expression,
+) {
+  const browY = eyeY - eyeRadius * (expression === "awe" ? 1.55 : 1.15);
+  const tilt = expression === "cold" ? -dir * 0.18 : expression === "excited" ? dir * 0.12 : 0;
+  const width = eyeRadius * 0.85;
+
+  ctx.strokeStyle = "#1f2937";
+  ctx.lineWidth = Math.max(1.6, eyeRadius * 0.22);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(ex - width / 2, browY + tilt * width);
+  ctx.quadraticCurveTo(ex, browY - eyeRadius * 0.15, ex + width / 2, browY - tilt * width);
   ctx.stroke();
 }
 
@@ -86,7 +113,7 @@ function drawFace(
   // Big, bold cartoon eyes with a thick outline — the "toy block" look.
   const eyeRadius = expression === "awe" ? headSize * 0.2 : headSize * 0.16;
 
-  for (const dir of [-1, 1]) {
+  for (const dir of [-1, 1] as const) {
     const ex = cx + dir * eyeOffset + wobble;
     ctx.fillStyle = "#ffffff";
     ctx.beginPath();
@@ -109,6 +136,8 @@ function drawFace(
     ctx.beginPath();
     ctx.arc(ex + eyeRadius * 0.22, eyeY - eyeRadius * 0.24, eyeRadius * 0.2, 0, Math.PI * 2);
     ctx.fill();
+
+    drawEyebrow(ctx, ex, eyeY, eyeRadius, dir, expression);
   }
 
   const mouthY = headTopY + headSize * 0.66;
@@ -164,35 +193,43 @@ function bounceScale(params: DrawParams): { x: number; y: number } {
   return { x: 1 + eased * 0.14, y: 1 - eased * 0.16 };
 }
 
-const BLOCK_COUNT_CAP = 200;
+const BLOCK_COUNT_CAP = 100;
 
+/**
+ * Literal body for 1-100: lays out `count` unit blocks in a rows x cols grid
+ * that reveals factors (12 -> 3x4, 16 -> 4x4, 100 -> 10x10, primes wrap into
+ * a near-square grid with a shorter last row). Each block's color comes from
+ * the fixed digit palette, split across tens/ones for composite numbers.
+ */
 function drawBlockBody(ctx: CanvasRenderingContext2D, cx: number, baseY: number, unit: number, count: number, isNegative: boolean, maxBodyHeight: number, maxBodyWidth: number) {
   const capped = Math.max(1, Math.min(BLOCK_COUNT_CAP, Math.round(Math.abs(count))));
-  const perRow = capped <= 10 ? 1 : 10;
-  const rows = Math.ceil(capped / perRow);
+  const { rows, cols } = factorGrid(capped);
   const gapRatio = 0.12;
   const idealBlockSize = unit;
   const blockSize = Math.min(
     idealBlockSize,
     maxBodyHeight / (rows * (1 + gapRatio)),
-    maxBodyWidth / (perRow * (1 + gapRatio)),
+    maxBodyWidth / (cols * (1 + gapRatio)),
   );
   const gap = blockSize * gapRatio;
-  const gridWidth = perRow * (blockSize + gap) - gap;
-  const showNumbers = blockSize > 12;
+  const gridWidth = cols * (blockSize + gap) - gap;
+  const showNumbers = blockSize > 14;
+  const colors = countBlockColors(capped);
 
   let blockIndex = 0;
   for (let row = rows - 1; row >= 0 && blockIndex < capped; row--) {
-    const inThisRow = Math.min(perRow, capped - blockIndex);
+    const inThisRow = Math.min(cols, capped - blockIndex);
     const rowWidth = inThisRow * (blockSize + gap) - gap;
     const startX = cx - rowWidth / 2;
     for (let col = 0; col < inThisRow; col++) {
       const x = startX + col * (blockSize + gap);
       const y = baseY - (rows - row) * (blockSize + gap);
-      drawToyBlock(ctx, x, y, blockSize, blockSize, colorFor(blockIndex, isNegative));
+      const entry = colors[blockIndex];
+      const { fill, outline } = resolveBlockColor(entry.plan, entry.rainbowIndex, isNegative);
+      drawToyBlock(ctx, x, y, blockSize, blockSize, fill, outline);
       if (showNumbers) {
-        ctx.fillStyle = "rgba(31,41,55,0.85)";
-        ctx.font = `800 ${Math.round(blockSize * 0.42)}px "Nunito", system-ui, sans-serif`;
+        ctx.fillStyle = outline ? MILESTONE_ACCENT : "rgba(31,41,55,0.85)";
+        ctx.font = `800 ${Math.round(blockSize * 0.38)}px "Nunito", system-ui, sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(String(blockIndex + 1), x + blockSize / 2, y + blockSize / 2 + blockSize * 0.02);
@@ -214,11 +251,13 @@ function drawPlaceValueTier(
   count: number,
   blockWidth: number,
   blockHeight: number,
-  colorIndex: number,
+  digit: number,
+  isOnesPlace: boolean,
   isNegative: boolean,
   perRow: number,
 ): number {
   if (count <= 0) return y;
+  const plan = placeColorPlan(digit, isOnesPlace);
   const rows = Math.ceil(count / perRow);
   let drawn = 0;
   let cursorY = y;
@@ -227,14 +266,8 @@ function drawPlaceValueTier(
     const totalWidth = inRow * (blockWidth + blockGap) - blockGap;
     const startX = cx - totalWidth / 2;
     for (let i = 0; i < inRow; i++) {
-      drawToyBlock(
-        ctx,
-        startX + i * (blockWidth + blockGap),
-        cursorY - blockHeight,
-        blockWidth,
-        blockHeight,
-        colorFor(colorIndex, isNegative),
-      );
+      const { fill, outline } = resolveBlockColor(plan, drawn + i, isNegative);
+      drawToyBlock(ctx, startX + i * (blockWidth + blockGap), cursorY - blockHeight, blockWidth, blockHeight, fill, outline);
     }
     drawn += inRow;
     cursorY -= blockHeight + blockGap;
@@ -264,10 +297,12 @@ function drawGroupedBody(ctx: CanvasRenderingContext2D, cx: number, baseY: numbe
   const blockGap = u * 0.15;
 
   let y = baseY;
-  y = drawPlaceValueTier(ctx, cx, y, blockGap, thousands, u * 1.7, u * 1.3, 6, isNegative, 10);
-  y = drawPlaceValueTier(ctx, cx, y, blockGap, hundreds, u * 1.6, u * 1.1, 0, isNegative, 5);
-  y = drawPlaceValueTier(ctx, cx, y, blockGap, tens, u * 0.9, u * 0.85, 2, isNegative, 10);
-  y = drawPlaceValueTier(ctx, cx, y, blockGap, Math.max(1, ones), u * 0.5, u * 0.5, 4, isNegative, 10);
+  // Thousands can run 0-19 in this range (up to 19999), beyond a single 0-9
+  // digit - clamp only the color lookup, not the drawn block count.
+  y = drawPlaceValueTier(ctx, cx, y, blockGap, thousands, u * 1.7, u * 1.3, Math.min(9, thousands), false, isNegative, 10);
+  y = drawPlaceValueTier(ctx, cx, y, blockGap, hundreds, u * 1.6, u * 1.1, hundreds, false, isNegative, 5);
+  y = drawPlaceValueTier(ctx, cx, y, blockGap, tens, u * 0.9, u * 0.85, tens, false, isNegative, 10);
+  y = drawPlaceValueTier(ctx, cx, y, blockGap, Math.max(1, ones), u * 0.5, u * 0.5, ones, true, isNegative, 10);
 
   const headGap = u * 0.55;
   return { headTopY: y - headGap, headSize: u * 0.9, top: y, bottom: baseY };
@@ -381,7 +416,7 @@ export function drawCharacter(canvas: HTMLCanvasElement, params: DrawParams) {
   ctx.translate(-cx, -baseY + bob);
 
   let body: { headTopY: number; headSize: number; top: number; bottom: number };
-  const color0 = colorFor(0, params.isNegative);
+  const symbolicArmColor = params.isNegative ? coldTint("#818cf8", 0.3) : "#818cf8";
 
   const maxBodyHeight = baseY * 0.62;
   const maxBodyWidth = width * 0.92;
@@ -403,7 +438,7 @@ export function drawCharacter(canvas: HTMLCanvasElement, params: DrawParams) {
     body = drawBlockBody(ctx, cx, baseY, unit, params.smallCount === 0 ? 1 : params.smallCount, params.isNegative, maxBodyHeight, maxBodyWidth);
   }
 
-  drawArms(ctx, cx, body.top, body.bottom, unit * 2.2, params.level >= 3 ? color0 : "#475569", sway);
+  drawArms(ctx, cx, body.top, body.bottom, unit * 2.2, params.level >= 3 ? symbolicArmColor : "#475569", sway);
   drawFace(ctx, cx, body.headTopY, body.headSize, params.expression, wobble);
 
   ctx.restore();

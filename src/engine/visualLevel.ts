@@ -2,7 +2,7 @@ import { type HugeNumber, abs, compare, fromSafeInteger } from "./HugeNumber";
 
 export type VisualLevel = 1 | 2 | 3 | 4;
 
-const LEVEL1_MAX = fromSafeInteger(200);
+const LEVEL1_MAX = fromSafeInteger(100);
 const LEVEL2_MAX = fromSafeInteger(20_000);
 
 /**
