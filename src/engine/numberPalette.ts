@@ -32,16 +32,23 @@ export function digitColorPlan(digit: number): ColorPlan {
   return { kind: "solid", color: DIGIT_SOLID_COLORS[digit] ?? DIGIT_SOLID_COLORS[0] };
 }
 
-/** Color for a place-value tier (tens/hundreds/thousands); the ones place never gets the milestone treatment. */
-export function placeColorPlan(digit: number, isOnesPlace: boolean): ColorPlan {
-  if (digit === 1 && !isOnesPlace) return { kind: "milestone" };
-  return digitColorPlan(digit);
+function leadingDigit(n: number): number {
+  const str = Math.floor(Math.abs(n)).toString();
+  return Number(str[0]);
 }
 
-/** Color for a whole literal 1-10 count (10 is the milestone white/red). */
-export function countColorPlan(count: number): ColorPlan {
+/**
+ * A character's color is its *identity*, not a per-digit patchwork: the
+ * whole body - however many cells it has - shares one dominant color, so
+ * growing/shrinking reads as the same character changing shape, not
+ * swapping colors. Only the exact number 10 gets its own distinct
+ * milestone treatment (white + red); every other count, including round
+ * numbers like 100, derives its identity from its leading digit (100 ->
+ * leading digit "1" -> red, same family as 1).
+ */
+export function identityColorPlan(count: number): ColorPlan {
   if (count === 10) return { kind: "milestone" };
-  return digitColorPlan(count);
+  return digitColorPlan(leadingDigit(count));
 }
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -101,30 +108,12 @@ export interface BlockColorEntry {
 }
 
 /**
- * Assigns a ColorPlan to every block (by flattened index) in a literal count
- * of `count` blocks, deriving composite numbers from their tens/ones digits
- * so e.g. 37 reads as "30 (tens digit's color) + 7 (rainbow)".
+ * Every cell of a `count`-cell body shares the same identity ColorPlan
+ * (see identityColorPlan) - `rainbowIndex` only matters when that plan is
+ * "rainbow", cycling RAINBOW_SEQUENCE across the whole body in reading order.
  */
 export function countBlockColors(count: number): BlockColorEntry[] {
   if (count <= 0) return [];
-  if (count <= 10) {
-    const plan = countColorPlan(count);
-    return Array.from({ length: count }, (_, i) => ({ plan, rainbowIndex: i }));
-  }
-  if (count === 100) {
-    // 10 tens of ten: predominantly white with red details, like 10 scaled up.
-    const plan: ColorPlan = { kind: "milestone" };
-    return Array.from({ length: 100 }, (_, i) => ({ plan, rainbowIndex: i }));
-  }
-
-  const tensDigit = Math.floor(count / 10);
-  const onesDigit = count % 10;
-  const tensBlockCount = tensDigit * 10;
-  const tensPlan = placeColorPlan(tensDigit, false);
-  const onesPlan = digitColorPlan(onesDigit);
-
-  const entries: BlockColorEntry[] = [];
-  for (let i = 0; i < tensBlockCount; i++) entries.push({ plan: tensPlan, rainbowIndex: i });
-  for (let i = 0; i < onesDigit; i++) entries.push({ plan: onesPlan, rainbowIndex: i });
-  return entries;
+  const plan = identityColorPlan(count);
+  return Array.from({ length: count }, (_, i) => ({ plan, rainbowIndex: i }));
 }

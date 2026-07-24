@@ -1,12 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  digitColorPlan,
-  countColorPlan,
-  placeColorPlan,
-  factorGrid,
-  countBlockColors,
-  coldTint,
-} from "../engine/numberPalette";
+import { digitColorPlan, identityColorPlan, factorGrid, countBlockColors, coldTint } from "../engine/numberPalette";
 
 describe("fixed digit color palette", () => {
   it("maps each digit 1-9 to its required color category", () => {
@@ -21,19 +14,32 @@ describe("fixed digit color palette", () => {
     expect(digitColorPlan(9)).toEqual({ kind: "solid", color: "#9ca3af" }); // gray
   });
 
-  it("gives 10 the white-with-red milestone treatment", () => {
-    expect(countColorPlan(10)).toEqual({ kind: "milestone" });
+  it("gives exactly 10 the white-with-red milestone treatment", () => {
+    expect(identityColorPlan(10)).toEqual({ kind: "milestone" });
+  });
+});
+
+describe("identity color: one dominant color per character, from its leading digit", () => {
+  it("colors a character by its leading digit, not a tens/ones patchwork", () => {
+    expect(identityColorPlan(1)).toEqual({ kind: "solid", color: "#ef4444" });
+    expect(identityColorPlan(25)).toEqual({ kind: "solid", color: "#f97316" }); // leading 2 -> orange
+    expect(identityColorPlan(37)).toEqual({ kind: "solid", color: "#facc15" }); // leading 3 -> yellow
+    expect(identityColorPlan(99)).toEqual({ kind: "solid", color: "#9ca3af" }); // leading 9 -> gray
   });
 
-  it("gives a ten/hundred/thousand place (digit 1, not ones place) the milestone treatment", () => {
-    expect(placeColorPlan(1, false)).toEqual({ kind: "milestone" });
-    // but the ones place with digit 1 is just plain red, not the "10" milestone
-    expect(placeColorPlan(1, true)).toEqual({ kind: "solid", color: "#ef4444" });
+  it("keeps 100 in the same red family as 1, not white/gray - it is not the '10' milestone", () => {
+    expect(identityColorPlan(100)).toEqual({ kind: "solid", color: "#ef4444" });
   });
 
-  it("never modifies the fixed association even for other digits in a tens place", () => {
-    expect(placeColorPlan(3, false)).toEqual({ kind: "solid", color: "#facc15" });
-    expect(placeColorPlan(7, false)).toEqual({ kind: "rainbow" });
+  it("gives any leading-digit-7 number the rainbow treatment", () => {
+    expect(identityColorPlan(7)).toEqual({ kind: "rainbow" });
+    expect(identityColorPlan(72)).toEqual({ kind: "rainbow" });
+  });
+
+  it("every cell of a count shares that one identity plan", () => {
+    const colors = countBlockColors(100);
+    expect(colors).toHaveLength(100);
+    for (const entry of colors) expect(entry.plan).toEqual({ kind: "solid", color: "#ef4444" });
   });
 });
 
@@ -62,36 +68,6 @@ describe("factor-revealing grid layout", () => {
     for (const n of [7, 11, 13, 37, 59, 97]) {
       expect(factorGrid(n, 10).cols).toBeLessThanOrEqual(10);
     }
-  });
-});
-
-describe("composite number block coloring", () => {
-  it("derives 37 as 30 (tens digit color) + 7 (rainbow)", () => {
-    const colors = countBlockColors(37);
-    expect(colors).toHaveLength(37);
-    // first 30 blocks (3 tens) share the digit-3 color
-    for (let i = 0; i < 30; i++) expect(colors[i].plan).toEqual({ kind: "solid", color: "#facc15" });
-    // last 7 blocks are the rainbow ones digit
-    for (let i = 30; i < 37; i++) expect(colors[i].plan).toEqual({ kind: "rainbow" });
-  });
-
-  it("derives 15 as a milestone ten + a light-blue five", () => {
-    const colors = countBlockColors(15);
-    expect(colors).toHaveLength(15);
-    for (let i = 0; i < 10; i++) expect(colors[i].plan).toEqual({ kind: "milestone" });
-    for (let i = 10; i < 15; i++) expect(colors[i].plan).toEqual({ kind: "solid", color: "#22d3ee" });
-  });
-
-  it("derives 20 as a uniform digit-2 orange (a clean multiple of ten)", () => {
-    const colors = countBlockColors(20);
-    expect(colors).toHaveLength(20);
-    for (const entry of colors) expect(entry.plan).toEqual({ kind: "solid", color: "#f97316" });
-  });
-
-  it("keeps 100 predominantly white/milestone, not falling through to a wrong digit lookup", () => {
-    const colors = countBlockColors(100);
-    expect(colors).toHaveLength(100);
-    for (const entry of colors) expect(entry.plan).toEqual({ kind: "milestone" });
   });
 });
 

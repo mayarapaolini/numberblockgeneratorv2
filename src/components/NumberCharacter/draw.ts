@@ -3,11 +3,9 @@ import {
   type ColorPlan,
   RAINBOW_SEQUENCE,
   MILESTONE_BASE,
-  MILESTONE_ACCENT,
   coldTint,
   factorGrid,
-  countBlockColors,
-  placeColorPlan,
+  identityColorPlan,
 } from "../../engine/numberPalette";
 
 export type Expression = "happy" | "excited" | "cold" | "awe";
@@ -25,21 +23,6 @@ export interface DrawParams {
   hueSeed: number; // 0..1 deterministic seed for cosmic color variety
 }
 
-/** Resolves a ColorPlan (+ position within its group, for rainbow cycling) to actual paint colors. */
-function resolveBlockColor(plan: ColorPlan, indexInGroup: number, isNegative: boolean): { fill: string; outline?: string } {
-  if (plan.kind === "rainbow") {
-    const hue = RAINBOW_SEQUENCE[indexInGroup % RAINBOW_SEQUENCE.length];
-    return { fill: isNegative ? coldTint(hue) : hue };
-  }
-  if (plan.kind === "milestone") {
-    return {
-      fill: isNegative ? coldTint(MILESTONE_BASE, 0.35) : MILESTONE_BASE,
-      outline: isNegative ? coldTint(MILESTONE_ACCENT) : MILESTONE_ACCENT,
-    };
-  }
-  return { fill: isNegative ? coldTint(plan.color) : plan.color };
-}
-
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   const radius = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
   ctx.beginPath();
@@ -49,33 +32,6 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.arcTo(x, y + h, x, y, radius);
   ctx.arcTo(x, y, x + w, y, radius);
   ctx.closePath();
-}
-
-/**
- * A single "toy block": flat fill, a soft top-left plastic highlight, and a
- * bold dark outline — the numbered-stacked-block look, drawn entirely with
- * shapes/gradients (no image assets).
- */
-function drawToyBlock(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string, outlineColor?: string) {
-  const radius = Math.min(w, h) * 0.22;
-  roundRect(ctx, x, y, w, h, radius);
-  ctx.fillStyle = color;
-  ctx.fill();
-
-  ctx.save();
-  roundRect(ctx, x, y, w, h, radius);
-  ctx.clip();
-  const highlight = ctx.createLinearGradient(x, y, x + w * 0.7, y + h * 0.7);
-  highlight.addColorStop(0, "rgba(255,255,255,0.4)");
-  highlight.addColorStop(0.55, "rgba(255,255,255,0)");
-  ctx.fillStyle = highlight;
-  ctx.fillRect(x, y, w, h);
-  ctx.restore();
-
-  roundRect(ctx, x, y, w, h, radius);
-  ctx.strokeStyle = outlineColor ?? "rgba(17,24,39,0.85)";
-  ctx.lineWidth = Math.max(1.6, Math.min(w, h) * (outlineColor ? 0.09 : 0.055));
-  ctx.stroke();
 }
 
 /** Simple, mobile eyebrow above one eye — the main way expressions read as "alive". */
@@ -100,6 +56,11 @@ function drawEyebrow(
   ctx.stroke();
 }
 
+/**
+ * One large, centered eye and a simple mouth - a plain, generic "single-eye
+ * mascot" face (a common, non-exclusive convention across children's
+ * characters), original in its proportions, colors, and every other detail.
+ */
 function drawFace(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -109,38 +70,36 @@ function drawFace(
   wobble: number,
 ) {
   const eyeY = headTopY + headSize * 0.42;
-  const eyeOffset = headSize * 0.24;
-  // Big, bold cartoon eyes with a thick outline — the "toy block" look.
-  const eyeRadius = expression === "awe" ? headSize * 0.2 : headSize * 0.16;
+  const eyeRadius = expression === "awe" ? headSize * 0.3 : headSize * 0.25;
+  const ex = cx + wobble;
+
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  if (expression === "cold") {
+    ctx.ellipse(ex, eyeY, eyeRadius, eyeRadius * 0.7, 0, 0, Math.PI * 2);
+  } else {
+    ctx.arc(ex, eyeY, eyeRadius, 0, Math.PI * 2);
+  }
+  ctx.fill();
+  ctx.lineWidth = Math.max(1.8, eyeRadius * 0.14);
+  ctx.strokeStyle = "#1f2937";
+  ctx.stroke();
+
+  ctx.fillStyle = "#1f2937";
+  ctx.beginPath();
+  ctx.arc(ex, eyeY, eyeRadius * 0.48, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.arc(ex + eyeRadius * 0.2, eyeY - eyeRadius * 0.22, eyeRadius * 0.18, 0, Math.PI * 2);
+  ctx.fill();
 
   for (const dir of [-1, 1] as const) {
-    const ex = cx + dir * eyeOffset + wobble;
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath();
-    if (expression === "cold") {
-      ctx.ellipse(ex, eyeY, eyeRadius, eyeRadius * 0.65, 0, 0, Math.PI * 2);
-    } else {
-      ctx.arc(ex, eyeY, eyeRadius, 0, Math.PI * 2);
-    }
-    ctx.fill();
-    ctx.lineWidth = Math.max(1.5, eyeRadius * 0.18);
-    ctx.strokeStyle = "#1f2937";
-    ctx.stroke();
-
-    ctx.fillStyle = "#1f2937";
-    ctx.beginPath();
-    ctx.arc(ex, eyeY, eyeRadius * 0.52, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#fff";
-    ctx.beginPath();
-    ctx.arc(ex + eyeRadius * 0.22, eyeY - eyeRadius * 0.24, eyeRadius * 0.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    drawEyebrow(ctx, ex, eyeY, eyeRadius, dir, expression);
+    drawEyebrow(ctx, ex + dir * eyeRadius * 0.75, eyeY, eyeRadius * 0.75, dir, expression);
   }
 
-  const mouthY = headTopY + headSize * 0.66;
+  const mouthY = headTopY + headSize * 0.72;
   ctx.strokeStyle = "#1f2937";
   ctx.lineWidth = Math.max(2, headSize * 0.05);
   ctx.lineCap = "round";
@@ -195,96 +154,129 @@ function bounceScale(params: DrawParams): { x: number; y: number } {
 
 const BLOCK_COUNT_CAP = 100;
 
+/** Fills+outlines a rounded rect with a resolved ColorPlan, cycling rainbow per-cell if needed. */
+function paintIdentityBody(
+  ctx: CanvasRenderingContext2D,
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+  radius: number,
+  plan: ColorPlan,
+  rows: number,
+  cols: number,
+  isNegative: boolean,
+) {
+  roundRect(ctx, left, top, width, height, radius);
+  if (plan.kind === "solid") {
+    ctx.fillStyle = isNegative ? coldTint(plan.color) : plan.color;
+    ctx.fill();
+  } else if (plan.kind === "milestone") {
+    ctx.fillStyle = isNegative ? coldTint(MILESTONE_BASE, 0.35) : MILESTONE_BASE;
+    ctx.fill();
+  } else {
+    ctx.save();
+    ctx.clip();
+    const cellW = width / cols;
+    const cellH = height / rows;
+    let index = 0;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const hue = RAINBOW_SEQUENCE[index % RAINBOW_SEQUENCE.length];
+        ctx.fillStyle = isNegative ? coldTint(hue) : hue;
+        ctx.fillRect(left + c * cellW - 0.5, top + r * cellH - 0.5, cellW + 1, cellH + 1);
+        index++;
+      }
+    }
+    ctx.restore();
+  }
+}
+
+/** One soft top-left highlight and one thin discrete grid overlay across the whole body - never per-cell. */
+function paintBodyFinish(
+  ctx: CanvasRenderingContext2D,
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+  radius: number,
+  rows: number,
+  cols: number,
+  plan: ColorPlan,
+  isNegative: boolean,
+) {
+  ctx.save();
+  roundRect(ctx, left, top, width, height, radius);
+  ctx.clip();
+
+  const highlight = ctx.createLinearGradient(left, top, left + width * 0.7, top + height * 0.7);
+  highlight.addColorStop(0, "rgba(255,255,255,0.32)");
+  highlight.addColorStop(0.55, "rgba(255,255,255,0)");
+  ctx.fillStyle = highlight;
+  ctx.fillRect(left, top, width, height);
+
+  ctx.strokeStyle = plan.kind === "milestone" ? "rgba(239,68,68,0.4)" : "rgba(17,24,39,0.18)";
+  ctx.lineWidth = Math.max(1, Math.min(width / cols, height / rows) * 0.03);
+  for (let r = 1; r < rows; r++) {
+    const y = top + (height / rows) * r;
+    ctx.beginPath();
+    ctx.moveTo(left, y);
+    ctx.lineTo(left + width, y);
+    ctx.stroke();
+  }
+  for (let c = 1; c < cols; c++) {
+    const x = left + (width / cols) * c;
+    ctx.beginPath();
+    ctx.moveTo(x, top);
+    ctx.lineTo(x, top + height);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  roundRect(ctx, left, top, width, height, radius);
+  ctx.strokeStyle = isNegative ? coldTint("#111827", 0.2) : "#111827";
+  ctx.lineWidth = Math.max(2.5, Math.min(width, height) * 0.045);
+  ctx.stroke();
+}
+
 /**
- * Literal body for 1-100: lays out `count` unit blocks in a rows x cols grid
- * that reveals factors (12 -> 3x4, 16 -> 4x4, 100 -> 10x10, primes wrap into
- * a near-square grid with a shorter last row). Each block's color comes from
- * the fixed digit palette, split across tens/ones for composite numbers.
+ * Literal body for 1-100: a single unified square/rectangle - one being, not
+ * a collection of separate blocks - subdivided by thin discrete grid lines
+ * into a rows x cols layout that reveals factors (12 -> 3x4, 16 -> 4x4,
+ * 100 -> 10x10; primes wrap into a near-square grid). The whole shape shares
+ * one identity color (see identityColorPlan) so growing/shrinking reads as
+ * geometry changing, not colors swapping.
  */
 function drawBlockBody(ctx: CanvasRenderingContext2D, cx: number, baseY: number, unit: number, count: number, isNegative: boolean, maxBodyHeight: number, maxBodyWidth: number) {
   const capped = Math.max(1, Math.min(BLOCK_COUNT_CAP, Math.round(Math.abs(count))));
   const { rows, cols } = factorGrid(capped);
-  const gapRatio = 0.12;
-  const idealBlockSize = unit;
-  const blockSize = Math.min(
-    idealBlockSize,
-    maxBodyHeight / (rows * (1 + gapRatio)),
-    maxBodyWidth / (cols * (1 + gapRatio)),
-  );
-  const gap = blockSize * gapRatio;
-  const gridWidth = cols * (blockSize + gap) - gap;
-  const showNumbers = blockSize > 14;
-  const colors = countBlockColors(capped);
+  const cellSize = Math.min(unit, maxBodyHeight / rows, maxBodyWidth / cols);
+  const width = cols * cellSize;
+  const height = rows * cellSize;
+  const left = cx - width / 2;
+  const top = baseY - height;
+  const radius = Math.min(width, height) * 0.14;
+  const plan = identityColorPlan(capped);
 
-  let blockIndex = 0;
-  for (let row = rows - 1; row >= 0 && blockIndex < capped; row--) {
-    const inThisRow = Math.min(cols, capped - blockIndex);
-    const rowWidth = inThisRow * (blockSize + gap) - gap;
-    const startX = cx - rowWidth / 2;
-    for (let col = 0; col < inThisRow; col++) {
-      const x = startX + col * (blockSize + gap);
-      const y = baseY - (rows - row) * (blockSize + gap);
-      const entry = colors[blockIndex];
-      const { fill, outline } = resolveBlockColor(entry.plan, entry.rainbowIndex, isNegative);
-      drawToyBlock(ctx, x, y, blockSize, blockSize, fill, outline);
-      if (showNumbers) {
-        ctx.fillStyle = outline ? MILESTONE_ACCENT : "rgba(31,41,55,0.85)";
-        ctx.font = `800 ${Math.round(blockSize * 0.38)}px "Nunito", system-ui, sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(String(blockIndex + 1), x + blockSize / 2, y + blockSize / 2 + blockSize * 0.02);
-      }
-      blockIndex++;
-    }
-  }
+  paintIdentityBody(ctx, left, top, width, height, radius, plan, rows, cols, isNegative);
+  paintBodyFinish(ctx, left, top, width, height, radius, rows, cols, plan, isNegative);
 
-  const headTopY = baseY - rows * (blockSize + gap);
-  return { headTopY, headSize: blockSize, gridWidth, top: headTopY, bottom: baseY };
+  return { headTopY: top, headSize: Math.min(width, height), top, bottom: baseY, gridWidth: width };
 }
 
-/** One place-value tier (thousands/hundreds/tens/ones) of the grouped body. */
-function drawPlaceValueTier(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  y: number,
-  blockGap: number,
-  count: number,
-  blockWidth: number,
-  blockHeight: number,
-  digit: number,
-  isOnesPlace: boolean,
-  isNegative: boolean,
-  perRow: number,
-): number {
-  if (count <= 0) return y;
-  const plan = placeColorPlan(digit, isOnesPlace);
-  const rows = Math.ceil(count / perRow);
-  let drawn = 0;
-  let cursorY = y;
-  for (let r = 0; r < rows; r++) {
-    const inRow = Math.min(perRow, count - drawn);
-    const totalWidth = inRow * (blockWidth + blockGap) - blockGap;
-    const startX = cx - totalWidth / 2;
-    for (let i = 0; i < inRow; i++) {
-      const { fill, outline } = resolveBlockColor(plan, drawn + i, isNegative);
-      drawToyBlock(ctx, startX + i * (blockWidth + blockGap), cursorY - blockHeight, blockWidth, blockHeight, fill, outline);
-    }
-    drawn += inRow;
-    cursorY -= blockHeight + blockGap;
-  }
-  return cursorY;
-}
-
+/**
+ * Grouped body for 101-19999: a stepped tower of thousands/hundreds/tens/ones
+ * tiers (tier *size* shows place value), all painted in the number's single
+ * identity color so the whole tower still reads as one being.
+ */
 function drawGroupedBody(ctx: CanvasRenderingContext2D, cx: number, baseY: number, unit: number, value: number, isNegative: boolean, maxBodyHeight: number, maxBodyWidth: number) {
   const abs = Math.min(19_999, Math.round(Math.abs(value)));
   const thousands = Math.min(19, Math.floor(abs / 1000));
   const hundreds = Math.floor((abs % 1000) / 100);
   const tens = Math.floor((abs % 100) / 10);
   const ones = abs % 10;
+  const plan = identityColorPlan(abs);
 
-  // Estimate how tall/wide the full tower would be at ideal size, then
-  // shrink uniformly to fit the available space — the same trick used for
-  // level 1's block grid.
   const thousandsRows = thousands > 0 ? Math.ceil(thousands / 10) : 0;
   const idealHeight =
     thousandsRows * unit * 1.3 + (hundreds > 0 ? unit * 1.1 : 0) + (tens > 0 ? unit * 0.85 : 0) + unit * 0.55;
@@ -294,18 +286,32 @@ function drawGroupedBody(ctx: CanvasRenderingContext2D, cx: number, baseY: numbe
   const shrinkW = Math.min(1, maxBodyWidth / Math.max(idealWidth, 1));
   const shrink = Math.min(shrinkH, shrinkW);
   const u = unit * shrink;
-  const blockGap = u * 0.15;
+  const tierGap = u * 0.12;
 
   let y = baseY;
-  // Thousands can run 0-19 in this range (up to 19999), beyond a single 0-9
-  // digit - clamp only the color lookup, not the drawn block count.
-  y = drawPlaceValueTier(ctx, cx, y, blockGap, thousands, u * 1.7, u * 1.3, Math.min(9, thousands), false, isNegative, 10);
-  y = drawPlaceValueTier(ctx, cx, y, blockGap, hundreds, u * 1.6, u * 1.1, hundreds, false, isNegative, 5);
-  y = drawPlaceValueTier(ctx, cx, y, blockGap, tens, u * 0.9, u * 0.85, tens, false, isNegative, 10);
-  y = drawPlaceValueTier(ctx, cx, y, blockGap, Math.max(1, ones), u * 0.5, u * 0.5, ones, true, isNegative, 10);
+  let widestTierWidth = 0;
+  const drawTier = (count: number, cellW: number, cellH: number, perRow: number) => {
+    if (count <= 0) return;
+    const rows = Math.ceil(count / perRow);
+    const cols = Math.min(perRow, count);
+    const width = cols * cellW;
+    const height = rows * cellH;
+    const left = cx - width / 2;
+    const top = y - height;
+    const radius = Math.min(cellW, cellH) * 0.16;
+    paintIdentityBody(ctx, left, top, width, height, radius, plan, rows, cols, isNegative);
+    paintBodyFinish(ctx, left, top, width, height, radius, rows, cols, plan, isNegative);
+    widestTierWidth = Math.max(widestTierWidth, width);
+    y = top - tierGap;
+  };
+
+  drawTier(thousands, u * 1.7, u * 1.3, 10);
+  drawTier(hundreds, u * 1.6, u * 1.1, 5);
+  drawTier(tens, u * 0.9, u * 0.85, 10);
+  drawTier(Math.max(1, ones), u * 0.5, u * 0.5, 10);
 
   const headGap = u * 0.55;
-  return { headTopY: y - headGap, headSize: u * 0.9, top: y, bottom: baseY };
+  return { headTopY: y - headGap, headSize: u * 0.9, top: y, bottom: baseY, gridWidth: widestTierWidth };
 }
 
 function drawSymbolicBody(ctx: CanvasRenderingContext2D, cx: number, baseY: number, unit: number, magnitudeRatio: number, isNegative: boolean, idleTime: number) {
