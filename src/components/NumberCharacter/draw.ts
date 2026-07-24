@@ -140,7 +140,8 @@ function drawFace(
   }
 }
 
-function drawLimbs(ctx: CanvasRenderingContext2D, cx: number, top: number, bottom: number, width: number, color: string, sway: number) {
+/** Just arms — no legs, for a simpler, calmer, more predictable silhouette. */
+function drawArms(ctx: CanvasRenderingContext2D, cx: number, top: number, bottom: number, width: number, color: string, sway: number) {
   ctx.strokeStyle = color;
   ctx.lineWidth = Math.max(3, width * 0.08);
   ctx.lineCap = "round";
@@ -150,13 +151,6 @@ function drawLimbs(ctx: CanvasRenderingContext2D, cx: number, top: number, botto
   ctx.lineTo(cx - width * 0.95 + sway, armY + width * 0.35);
   ctx.moveTo(cx + width * 0.55, armY);
   ctx.lineTo(cx + width * 0.95 - sway, armY + width * 0.35);
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.moveTo(cx - width * 0.25, bottom);
-  ctx.lineTo(cx - width * 0.35 - sway * 0.4, bottom + width * 0.4);
-  ctx.moveTo(cx + width * 0.25, bottom);
-  ctx.lineTo(cx + width * 0.35 + sway * 0.4, bottom + width * 0.4);
   ctx.stroke();
 }
 
@@ -409,7 +403,7 @@ export function drawCharacter(canvas: HTMLCanvasElement, params: DrawParams) {
     body = drawBlockBody(ctx, cx, baseY, unit, params.smallCount === 0 ? 1 : params.smallCount, params.isNegative, maxBodyHeight, maxBodyWidth);
   }
 
-  drawLimbs(ctx, cx, body.top, body.bottom, unit * 2.2, params.level >= 3 ? color0 : "#475569", sway);
+  drawArms(ctx, cx, body.top, body.bottom, unit * 2.2, params.level >= 3 ? color0 : "#475569", sway);
   drawFace(ctx, cx, body.headTopY, body.headSize, params.expression, wobble);
 
   ctx.restore();
