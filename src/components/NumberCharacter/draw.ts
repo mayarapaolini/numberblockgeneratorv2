@@ -46,6 +46,33 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.closePath();
 }
 
+/**
+ * A single "toy block": flat fill, a soft top-left plastic highlight, and a
+ * bold dark outline — the numbered-stacked-block look, drawn entirely with
+ * shapes/gradients (no image assets).
+ */
+function drawToyBlock(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string) {
+  const radius = Math.min(w, h) * 0.22;
+  roundRect(ctx, x, y, w, h, radius);
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  ctx.save();
+  roundRect(ctx, x, y, w, h, radius);
+  ctx.clip();
+  const highlight = ctx.createLinearGradient(x, y, x + w * 0.7, y + h * 0.7);
+  highlight.addColorStop(0, "rgba(255,255,255,0.4)");
+  highlight.addColorStop(0.55, "rgba(255,255,255,0)");
+  ctx.fillStyle = highlight;
+  ctx.fillRect(x, y, w, h);
+  ctx.restore();
+
+  roundRect(ctx, x, y, w, h, radius);
+  ctx.strokeStyle = "rgba(17,24,39,0.85)";
+  ctx.lineWidth = Math.max(1.6, Math.min(w, h) * 0.055);
+  ctx.stroke();
+}
+
 function drawFace(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -168,12 +195,7 @@ function drawBlockBody(ctx: CanvasRenderingContext2D, cx: number, baseY: number,
     for (let col = 0; col < inThisRow; col++) {
       const x = startX + col * (blockSize + gap);
       const y = baseY - (rows - row) * (blockSize + gap);
-      ctx.fillStyle = colorFor(blockIndex, isNegative);
-      roundRect(ctx, x, y, blockSize, blockSize, blockSize * 0.22);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(31,41,55,0.55)";
-      ctx.lineWidth = Math.max(1.5, blockSize * 0.05);
-      ctx.stroke();
+      drawToyBlock(ctx, x, y, blockSize, blockSize, colorFor(blockIndex, isNegative));
       if (showNumbers) {
         ctx.fillStyle = "rgba(31,41,55,0.85)";
         ctx.font = `800 ${Math.round(blockSize * 0.42)}px "Nunito", system-ui, sans-serif`;
@@ -211,12 +233,14 @@ function drawPlaceValueTier(
     const totalWidth = inRow * (blockWidth + blockGap) - blockGap;
     const startX = cx - totalWidth / 2;
     for (let i = 0; i < inRow; i++) {
-      ctx.fillStyle = colorFor(colorIndex, isNegative);
-      roundRect(ctx, startX + i * (blockWidth + blockGap), cursorY - blockHeight, blockWidth, blockHeight, blockHeight * 0.2);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(31,41,55,0.5)";
-      ctx.lineWidth = Math.max(1.5, blockHeight * 0.05);
-      ctx.stroke();
+      drawToyBlock(
+        ctx,
+        startX + i * (blockWidth + blockGap),
+        cursorY - blockHeight,
+        blockWidth,
+        blockHeight,
+        colorFor(colorIndex, isNegative),
+      );
     }
     drawn += inRow;
     cursorY -= blockHeight + blockGap;

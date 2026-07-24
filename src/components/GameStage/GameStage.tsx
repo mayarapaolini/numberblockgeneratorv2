@@ -2,6 +2,7 @@ import type { HugeNumber } from "../../engine/HugeNumber";
 import { getVisualLevel } from "../../engine/visualLevel";
 import { NumberCharacter } from "../NumberCharacter/NumberCharacter";
 import { NumberDisplay } from "../NumberDisplay/NumberDisplay";
+import { LandmarkBackdrop } from "./LandmarkBackdrop";
 import styles from "./GameStage.module.css";
 
 interface GameStageProps {
@@ -88,6 +89,7 @@ export function GameStage({
       </div>
 
       <div className={styles.characterArea}>
+        <LandmarkBackdrop value={value} />
         <NumberCharacter value={value} reduceMotion={reduceMotion} />
       </div>
 
