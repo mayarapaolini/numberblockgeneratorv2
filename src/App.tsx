@@ -133,23 +133,27 @@ export default function App() {
         Pular para os controles
       </a>
 
-      <GameStage
-        value={state.value}
-        reduceMotion={state.settings.reduceMotion}
-        message={state.lastMessage ?? getEducationalTip(state.value, state.mode)}
-        soundOn={state.settings.soundOn}
-        isFullscreen={isFullscreen}
-        fullscreenSupported
-        onOpenSettings={() => setSettingsOpen(true)}
-        onToggleFullscreen={toggleFullscreen}
-        onToggleSound={() => actions.setSettings({ soundOn: !state.settings.soundOn })}
-        onOpenSpecialNumbers={() => setSpecialNumbersOpen(true)}
-      />
+      <div className={styles.layout}>
+        <div className={styles.stageColumn}>
+          <GameStage
+            value={state.value}
+            reduceMotion={state.settings.reduceMotion}
+            message={state.lastMessage ?? getEducationalTip(state.value, state.mode)}
+            soundOn={state.settings.soundOn}
+            isFullscreen={isFullscreen}
+            fullscreenSupported
+            onOpenSettings={() => setSettingsOpen(true)}
+            onToggleFullscreen={toggleFullscreen}
+            onToggleSound={() => actions.setSettings({ soundOn: !state.settings.soundOn })}
+            onOpenSpecialNumbers={() => setSpecialNumbersOpen(true)}
+          />
 
-      <ModeSelector mode={state.mode} onSelect={(mode) => actions.setMode(mode)} />
+          <ModeSelector mode={state.mode} onSelect={(mode) => actions.setMode(mode)} />
+        </div>
 
-      <div id="control-panel">
-        <ControlPanel state={state} actions={actions} playSound={play} />
+        <div id="control-panel" className={styles.sidebar}>
+          <ControlPanel state={state} actions={actions} playSound={play} />
+        </div>
       </div>
 
       {needRefresh ? (

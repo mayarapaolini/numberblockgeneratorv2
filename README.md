@@ -16,11 +16,21 @@ plataforma principal.
 - **Motor numérico próprio (`HugeNumber`)**: representa valores de `-49` até
   `10^3000003` sem nunca usar `Number`/`Math.pow` como fonte de verdade, sem
   gerar `Infinity`/`NaN` e sem montar strings com milhões de caracteres.
-- **4 níveis de representação visual**: blocos literais, blocos agrupados
-  (dezenas/centenas/milhares), personagem simbólico e cena cósmica abstrata —
-  com custo de renderização constante mesmo em `10^3000003`.
+- **4 níveis de representação visual**: blocos literais numerados (até 200,
+  no espírito dos blocos numéricos coloridos, mas com arte 100% original),
+  blocos agrupados por valor posicional (milhares/centenas/dezenas/unidades),
+  personagem simbólico e cena cósmica abstrata — com custo de renderização
+  constante mesmo em `10^3000003`.
 - **7 modos de jogo**: Livre, Alongamento, Automático, Negativos, Potências de
   10, Planet 100 e Tela Verde (chroma key).
+- **Comparações com o mundo real e cultura**: cada número positivo é
+  comparado a uma altura real — de uma formiga ao Burj Khalifa (Dubai), Cristo
+  Redentor (Brasil), Torre Eiffel (França), Monte Everest, até escalas
+  astronômicas (Sol, Via Láctea, universo observável). Números negativos
+  comparam profundidades reais, de uma poça d'água até a Fossa das Marianas.
+- **Layout em duas colunas**: em telas largas (iPad paisagem, desktop) os
+  controles ficam numa barra lateral rolável, deixando o personagem com todo
+  o espaço do palco; em telas estreitas eles voltam a ser um painel inferior.
 - **Sons via Web Audio API** (sem arquivos de áudio), narração opcional em
   pt-BR via `SpeechSynthesis`, e respeito total a "reduzir movimento".
 - **PWA instalável** com funcionamento offline após o primeiro carregamento.
@@ -180,6 +190,11 @@ analytics. Nenhum dado pessoal é armazenado — apenas preferências de jogo em
 
 ## Limitações conhecidas
 
+- O visual do personagem se inspira na ideia de blocos numéricos coloridos
+  empilhados e numerados (comum em materiais educativos), mas não reproduz o
+  design, as cores, as expressões ou qualquer arte oficial do show
+  Numberblocks — tudo é desenhado do zero em Canvas com paleta e proporções
+  próprias, para não infringir direitos autorais de terceiros.
 - A Fullscreen API real não está disponível em Safari/iPad para elementos
   arbitrários; o modo "tela cheia" cai automaticamente para uma alternativa
   visual (CSS), como recomendado — validado no simulador do Chromium, não em

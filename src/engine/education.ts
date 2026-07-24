@@ -1,7 +1,7 @@
 import { type HugeNumber, orderOfMagnitude } from "./HugeNumber";
 import { isPowerOfTen, getVisualLevel } from "./visualLevel";
 import { formatDigitCount, groupThousands } from "./HugeNumberFormatter";
-import { describeScale } from "./numberNames";
+import { describeWorldComparison } from "./worldReferences";
 import type { GameMode } from "../types/game";
 
 /** Short, spoken-friendly explanations shown near the character. */
@@ -13,15 +13,15 @@ export function getEducationalTip(value: HugeNumber, mode: GameMode): string {
     if (exponent === 2n) return "10 × 10 = 100. O expoente diz quantas vezes multiplicamos o 10 por ele mesmo.";
     if (exponent === 3n) return "10³ significa 10 × 10 × 10 = 1.000.";
     if (exponent <= 21n) {
-      return `10 elevado a ${exponent} tem ${formatDigitCount(value)} dígitos: um 1 seguido de ${exponent} zeros!`;
+      return `10 elevado a ${exponent} tem ${formatDigitCount(value)} dígitos: um 1 seguido de ${exponent} zeros! ${describeWorldComparison(value)}`;
     }
     const zeroCount = groupThousands(exponent.toString());
-    return `Este número é grande demais para escrever todos os ${zeroCount} zeros — mas o computador sabe exatamente qual ele é!`;
+    return `Este número é grande demais para escrever todos os ${zeroCount} zeros — mas o computador sabe exatamente qual ele é! ${describeWorldComparison(value)}`;
   }
 
   if (getVisualLevel(value) === 4) {
-    return `Este número tem ${formatDigitCount(value)} dígitos. Grande demais para escrever todos os zeros!`;
+    return `Este número tem ${formatDigitCount(value)} dígitos. ${describeWorldComparison(value)}`;
   }
 
-  return describeScale(value);
+  return describeWorldComparison(value);
 }

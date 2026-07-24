@@ -89,12 +89,13 @@ export function GameStage({
 
       <div className={styles.characterArea}>
         <NumberCharacter value={value} reduceMotion={reduceMotion} />
-        {message ? (
-          <p className={styles.message} role="status">
-            {message}
-          </p>
-        ) : null}
       </div>
+
+      {message ? (
+        <p className={styles.message} role="status">
+          {message}
+        </p>
+      ) : null}
     </section>
   );
 }

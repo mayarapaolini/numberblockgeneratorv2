@@ -54,26 +54,34 @@ function drawFace(
   expression: Expression,
   wobble: number,
 ) {
-  const eyeY = headTopY + headSize * 0.4;
-  const eyeOffset = headSize * 0.22;
-  const eyeRadius = expression === "awe" ? headSize * 0.15 : headSize * 0.11;
+  const eyeY = headTopY + headSize * 0.42;
+  const eyeOffset = headSize * 0.24;
+  // Big, bold cartoon eyes with a thick outline — the "toy block" look.
+  const eyeRadius = expression === "awe" ? headSize * 0.2 : headSize * 0.16;
 
-  ctx.fillStyle = "#1f2937";
   for (const dir of [-1, 1]) {
     const ex = cx + dir * eyeOffset + wobble;
+    ctx.fillStyle = "#ffffff";
     ctx.beginPath();
     if (expression === "cold") {
-      ctx.ellipse(ex, eyeY, eyeRadius, eyeRadius * 0.6, 0, 0, Math.PI * 2);
+      ctx.ellipse(ex, eyeY, eyeRadius, eyeRadius * 0.65, 0, 0, Math.PI * 2);
     } else {
       ctx.arc(ex, eyeY, eyeRadius, 0, Math.PI * 2);
     }
     ctx.fill();
-    // small highlight
+    ctx.lineWidth = Math.max(1.5, eyeRadius * 0.18);
+    ctx.strokeStyle = "#1f2937";
+    ctx.stroke();
+
+    ctx.fillStyle = "#1f2937";
+    ctx.beginPath();
+    ctx.arc(ex, eyeY, eyeRadius * 0.52, 0, Math.PI * 2);
+    ctx.fill();
+
     ctx.fillStyle = "#fff";
     ctx.beginPath();
-    ctx.arc(ex + eyeRadius * 0.3, eyeY - eyeRadius * 0.3, eyeRadius * 0.3, 0, Math.PI * 2);
+    ctx.arc(ex + eyeRadius * 0.22, eyeY - eyeRadius * 0.24, eyeRadius * 0.2, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "#1f2937";
   }
 
   const mouthY = headTopY + headSize * 0.66;
@@ -135,15 +143,22 @@ function bounceScale(params: DrawParams): { x: number; y: number } {
   return { x: 1 + eased * 0.14, y: 1 - eased * 0.16 };
 }
 
-function drawBlockBody(ctx: CanvasRenderingContext2D, cx: number, baseY: number, unit: number, count: number, isNegative: boolean, maxBodyHeight: number) {
-  const capped = Math.max(1, Math.min(100, Math.round(Math.abs(count))));
+const BLOCK_COUNT_CAP = 200;
+
+function drawBlockBody(ctx: CanvasRenderingContext2D, cx: number, baseY: number, unit: number, count: number, isNegative: boolean, maxBodyHeight: number, maxBodyWidth: number) {
+  const capped = Math.max(1, Math.min(BLOCK_COUNT_CAP, Math.round(Math.abs(count))));
   const perRow = capped <= 10 ? 1 : 10;
   const rows = Math.ceil(capped / perRow);
   const gapRatio = 0.12;
   const idealBlockSize = unit;
-  const blockSize = Math.min(idealBlockSize, maxBodyHeight / (rows * (1 + gapRatio)));
+  const blockSize = Math.min(
+    idealBlockSize,
+    maxBodyHeight / (rows * (1 + gapRatio)),
+    maxBodyWidth / (perRow * (1 + gapRatio)),
+  );
   const gap = blockSize * gapRatio;
   const gridWidth = perRow * (blockSize + gap) - gap;
+  const showNumbers = blockSize > 12;
 
   let blockIndex = 0;
   for (let row = rows - 1; row >= 0 && blockIndex < capped; row--) {
@@ -156,9 +171,16 @@ function drawBlockBody(ctx: CanvasRenderingContext2D, cx: number, baseY: number,
       ctx.fillStyle = colorFor(blockIndex, isNegative);
       roundRect(ctx, x, y, blockSize, blockSize, blockSize * 0.22);
       ctx.fill();
-      ctx.strokeStyle = "rgba(0,0,0,0.15)";
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "rgba(31,41,55,0.55)";
+      ctx.lineWidth = Math.max(1.5, blockSize * 0.05);
       ctx.stroke();
+      if (showNumbers) {
+        ctx.fillStyle = "rgba(31,41,55,0.85)";
+        ctx.font = `800 ${Math.round(blockSize * 0.42)}px "Nunito", system-ui, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(blockIndex + 1), x + blockSize / 2, y + blockSize / 2 + blockSize * 0.02);
+      }
       blockIndex++;
     }
   }
@@ -167,65 +189,70 @@ function drawBlockBody(ctx: CanvasRenderingContext2D, cx: number, baseY: number,
   return { headTopY, headSize: blockSize, gridWidth, top: headTopY, bottom: baseY };
 }
 
-function drawGroupedBody(ctx: CanvasRenderingContext2D, cx: number, baseY: number, unit: number, value: number, isNegative: boolean) {
-  const abs = Math.min(9999, Math.round(Math.abs(value)));
-  const hundreds = Math.min(10, Math.floor(abs / 100));
-  const tens = Math.min(9, Math.floor((abs % 100) / 10));
-  const ones = Math.min(9, abs % 10);
+/** One place-value tier (thousands/hundreds/tens/ones) of the grouped body. */
+function drawPlaceValueTier(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  y: number,
+  blockGap: number,
+  count: number,
+  blockWidth: number,
+  blockHeight: number,
+  colorIndex: number,
+  isNegative: boolean,
+  perRow: number,
+): number {
+  if (count <= 0) return y;
+  const rows = Math.ceil(count / perRow);
+  let drawn = 0;
+  let cursorY = y;
+  for (let r = 0; r < rows; r++) {
+    const inRow = Math.min(perRow, count - drawn);
+    const totalWidth = inRow * (blockWidth + blockGap) - blockGap;
+    const startX = cx - totalWidth / 2;
+    for (let i = 0; i < inRow; i++) {
+      ctx.fillStyle = colorFor(colorIndex, isNegative);
+      roundRect(ctx, startX + i * (blockWidth + blockGap), cursorY - blockHeight, blockWidth, blockHeight, blockHeight * 0.2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(31,41,55,0.5)";
+      ctx.lineWidth = Math.max(1.5, blockHeight * 0.05);
+      ctx.stroke();
+    }
+    drawn += inRow;
+    cursorY -= blockHeight + blockGap;
+  }
+  return cursorY;
+}
+
+function drawGroupedBody(ctx: CanvasRenderingContext2D, cx: number, baseY: number, unit: number, value: number, isNegative: boolean, maxBodyHeight: number, maxBodyWidth: number) {
+  const abs = Math.min(19_999, Math.round(Math.abs(value)));
+  const thousands = Math.min(19, Math.floor(abs / 1000));
+  const hundreds = Math.floor((abs % 1000) / 100);
+  const tens = Math.floor((abs % 100) / 10);
+  const ones = abs % 10;
+
+  // Estimate how tall/wide the full tower would be at ideal size, then
+  // shrink uniformly to fit the available space — the same trick used for
+  // level 1's block grid.
+  const thousandsRows = thousands > 0 ? Math.ceil(thousands / 10) : 0;
+  const idealHeight =
+    thousandsRows * unit * 1.3 + (hundreds > 0 ? unit * 1.1 : 0) + (tens > 0 ? unit * 0.85 : 0) + unit * 0.55;
+  const widestRowBlocks = Math.min(10, Math.max(thousands, Math.min(hundreds, 5), tens, ones, 1));
+  const idealWidth = widestRowBlocks * unit * 1.7 * 1.15;
+  const shrinkH = Math.min(1, maxBodyHeight / Math.max(idealHeight, 1));
+  const shrinkW = Math.min(1, maxBodyWidth / Math.max(idealWidth, 1));
+  const shrink = Math.min(shrinkH, shrinkW);
+  const u = unit * shrink;
+  const blockGap = u * 0.15;
 
   let y = baseY;
-  const blockGap = unit * 0.15;
+  y = drawPlaceValueTier(ctx, cx, y, blockGap, thousands, u * 1.7, u * 1.3, 6, isNegative, 10);
+  y = drawPlaceValueTier(ctx, cx, y, blockGap, hundreds, u * 1.6, u * 1.1, 0, isNegative, 5);
+  y = drawPlaceValueTier(ctx, cx, y, blockGap, tens, u * 0.9, u * 0.85, 2, isNegative, 10);
+  y = drawPlaceValueTier(ctx, cx, y, blockGap, Math.max(1, ones), u * 0.5, u * 0.5, 4, isNegative, 10);
 
-  if (hundreds > 0) {
-    const rowLen = Math.min(hundreds, 5);
-    const rows = Math.ceil(hundreds / 5);
-    for (let r = 0; r < rows; r++) {
-      const count = Math.min(rowLen, hundreds - r * rowLen);
-      const w = unit * 1.6;
-      const totalWidth = count * (w + blockGap) - blockGap;
-      const startX = cx - totalWidth / 2;
-      for (let i = 0; i < count; i++) {
-        ctx.fillStyle = colorFor(0, isNegative);
-        roundRect(ctx, startX + i * (w + blockGap), y - unit * 1.1, w, unit * 1.1, unit * 0.2);
-        ctx.fill();
-        ctx.strokeStyle = "rgba(0,0,0,0.15)";
-        ctx.stroke();
-      }
-      y -= unit * 1.1 + blockGap;
-    }
-  }
-
-  if (tens > 0) {
-    const w = unit * 0.9;
-    const totalWidth = tens * (w + blockGap) - blockGap;
-    const startX = cx - totalWidth / 2;
-    for (let i = 0; i < tens; i++) {
-      ctx.fillStyle = colorFor(2, isNegative);
-      roundRect(ctx, startX + i * (w + blockGap), y - unit * 0.8, w, unit * 0.8, unit * 0.18);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(0,0,0,0.15)";
-      ctx.stroke();
-    }
-    y -= unit * 0.8 + blockGap;
-  }
-
-  if (ones > 0 || abs === 0) {
-    const w = unit * 0.5;
-    const count = Math.max(1, ones);
-    const totalWidth = count * (w + blockGap) - blockGap;
-    const startX = cx - totalWidth / 2;
-    for (let i = 0; i < count; i++) {
-      ctx.fillStyle = colorFor(4, isNegative);
-      roundRect(ctx, startX + i * (w + blockGap), y - unit * 0.5, w, unit * 0.5, unit * 0.12);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(0,0,0,0.15)";
-      ctx.stroke();
-    }
-    y -= unit * 0.5 + blockGap;
-  }
-
-  const headGap = unit * 0.55;
-  return { headTopY: y - headGap, headSize: unit * 0.9, top: y, bottom: baseY };
+  const headGap = u * 0.55;
+  return { headTopY: y - headGap, headSize: u * 0.9, top: y, bottom: baseY };
 }
 
 function drawSymbolicBody(ctx: CanvasRenderingContext2D, cx: number, baseY: number, unit: number, magnitudeRatio: number, isNegative: boolean, idleTime: number) {
@@ -338,15 +365,24 @@ export function drawCharacter(canvas: HTMLCanvasElement, params: DrawParams) {
   let body: { headTopY: number; headSize: number; top: number; bottom: number };
   const color0 = colorFor(0, params.isNegative);
 
+  const maxBodyHeight = baseY * 0.62;
+  const maxBodyWidth = width * 0.92;
+
+  if (params.level <= 3) {
+    ctx.fillStyle = "rgba(15,23,42,0.18)";
+    ctx.beginPath();
+    ctx.ellipse(cx, baseY + unit * 0.12, unit * 1.5, unit * 0.32, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   if (params.level === 4) {
     body = drawCosmicScene(ctx, width, height, cx, baseY, unit, params.idleTime, params.hueSeed, params.isNegative);
   } else if (params.level === 3) {
     body = drawSymbolicBody(ctx, cx, baseY, unit, params.magnitudeRatio, params.isNegative, params.idleTime);
   } else if (params.level === 2) {
-    body = drawGroupedBody(ctx, cx, baseY, unit, params.smallCount, params.isNegative);
+    body = drawGroupedBody(ctx, cx, baseY, unit, params.smallCount, params.isNegative, maxBodyHeight, maxBodyWidth);
   } else {
-    const maxBodyHeight = baseY * 0.62;
-    body = drawBlockBody(ctx, cx, baseY, unit, params.smallCount === 0 ? 1 : params.smallCount, params.isNegative, maxBodyHeight);
+    body = drawBlockBody(ctx, cx, baseY, unit, params.smallCount === 0 ? 1 : params.smallCount, params.isNegative, maxBodyHeight, maxBodyWidth);
   }
 
   drawLimbs(ctx, cx, body.top, body.bottom, unit * 2.2, params.level >= 3 ? color0 : "#475569", sway);

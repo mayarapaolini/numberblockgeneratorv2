@@ -81,7 +81,7 @@ export function ControlPanel({ state, actions, playSound }: ControlPanelProps) {
       ) : null}
 
       {state.mode === "negative" ? (
-        <NegativeInfo onGoTo={(value) => actions.setValue(fromSafeInteger(value))} />
+        <NegativeInfo value={state.value} onGoTo={(value) => actions.setValue(fromSafeInteger(value))} />
       ) : null}
 
       <section className={styles.section} aria-label="Somar e subtrair">

@@ -11,6 +11,13 @@
   background: linear-gradient(180deg, #1e293b, #0f172a);
 }
 
+@media (min-width: 760px) {
+  .stage {
+    margin: 0 0 0 0.75rem;
+    height: 100%;
+  }
+}
+
 .stage[data-level="1"] {
   background: linear-gradient(180deg, #fde68a, #fca5a5);
 }
@@ -91,15 +98,16 @@
 }
 
 .message {
-  position: absolute;
-  bottom: 0.75rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(15, 23, 42, 0.75);
+  flex: 0 0 auto;
+  margin: 0 0.75rem 0.75rem;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
   color: #fff;
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  font-size: 0.9rem;
-  max-width: 90%;
+  padding: 0.55rem 0.9rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  line-height: 1.35;
   text-align: center;
+  max-height: 4.8em;
+  overflow-y: auto;
 }

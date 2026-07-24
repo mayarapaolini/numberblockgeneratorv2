@@ -1,5 +1,6 @@
 .panel {
   flex: 0 0 auto;
+  width: 100%;
   max-height: 42vh;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -7,6 +8,19 @@
   padding: 0.6rem 0.75rem calc(0.75rem + var(--safe-bottom));
   background: var(--color-bg-panel);
   border-top: 1px solid var(--color-border);
+}
+
+/* Side-rail layout on wide screens: full-height scrollable column instead
+   of a short bottom sheet, so the character gets the rest of the space. */
+@media (min-width: 760px) {
+  .panel {
+    max-height: none;
+    height: 100%;
+    border-top: none;
+    border-left: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 0.75rem calc(0.75rem + var(--safe-right)) calc(0.75rem + var(--safe-bottom)) 0.75rem;
+  }
 }
 
 .section {
