@@ -74,7 +74,9 @@ export interface FactorGrid {
 
 /**
  * Finds a rows x cols grid for `n` blocks that reveals its factors, picking
- * the pair closest to a square (e.g. 12 -> 3x4, 16 -> 4x4, 100 -> 10x10).
+ * the pair closest to a square (e.g. 12 -> 4x3, 16 -> 4x4, 100 -> 10x10) and
+ * preferring the taller/portrait orientation over a flat wide one - a block
+ * tower reads better growing upward, so 2 is a column of two, not a row.
  * Numbers with no nice factor under `maxCols` (primes, or factors that would
  * make an absurdly wide single row) wrap into a near-square grid instead,
  * with the last row simply shorter - never a partial/cut block.
@@ -95,10 +97,11 @@ export function factorGrid(n: number, maxCols = 10): FactorGrid {
     }
   }
 
-  if (best) return { rows: best.rows, cols: best.cols, isExactRectangle: true };
+  // `best` is found with rows <= cols; swap to the taller orientation.
+  if (best) return { rows: best.cols, cols: best.rows, isExactRectangle: true };
 
-  const cols = Math.min(maxCols, Math.max(1, Math.ceil(Math.sqrt(n))));
-  const rows = Math.ceil(n / cols);
+  const rows = Math.min(maxCols, Math.max(1, Math.ceil(Math.sqrt(n))));
+  const cols = Math.ceil(n / rows);
   return { rows, cols, isExactRectangle: false };
 }
 

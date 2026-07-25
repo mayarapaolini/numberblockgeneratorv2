@@ -215,27 +215,66 @@ function paintBodyFinish(
   ctx.fillStyle = highlight;
   ctx.fillRect(left, top, width, height);
 
-  ctx.strokeStyle = plan.kind === "milestone" ? "rgba(239,68,68,0.4)" : "rgba(17,24,39,0.18)";
-  ctx.lineWidth = Math.max(1, Math.min(width / cols, height / rows) * 0.03);
+  // Bold, clearly-visible cell divisions (plus a thin bevel on each side)
+  // so the body reads as distinct blocks, not a flat tinted rectangle.
+  const cellW = width / cols;
+  const cellH = height / rows;
+  const lineWidth = Math.max(2.5, Math.min(cellW, cellH) * 0.1);
+  const lineColor = plan.kind === "milestone" ? "rgba(220,38,38,0.55)" : "rgba(17,24,39,0.4)";
+  const bevelLight = "rgba(255,255,255,0.35)";
+  const bevelDark = "rgba(0,0,0,0.15)";
+
   for (let r = 1; r < rows; r++) {
-    const y = top + (height / rows) * r;
+    const y = top + cellH * r;
+    ctx.strokeStyle = bevelLight;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(left, y - lineWidth / 2 - 0.5);
+    ctx.lineTo(left + width, y - lineWidth / 2 - 0.5);
+    ctx.stroke();
+
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = lineWidth;
     ctx.beginPath();
     ctx.moveTo(left, y);
     ctx.lineTo(left + width, y);
     ctx.stroke();
+
+    ctx.strokeStyle = bevelDark;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(left, y + lineWidth / 2 + 0.5);
+    ctx.lineTo(left + width, y + lineWidth / 2 + 0.5);
+    ctx.stroke();
   }
   for (let c = 1; c < cols; c++) {
-    const x = left + (width / cols) * c;
+    const x = left + cellW * c;
+    ctx.strokeStyle = bevelLight;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x - lineWidth / 2 - 0.5, top);
+    ctx.lineTo(x - lineWidth / 2 - 0.5, top + height);
+    ctx.stroke();
+
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = lineWidth;
     ctx.beginPath();
     ctx.moveTo(x, top);
     ctx.lineTo(x, top + height);
+    ctx.stroke();
+
+    ctx.strokeStyle = bevelDark;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + lineWidth / 2 + 0.5, top);
+    ctx.lineTo(x + lineWidth / 2 + 0.5, top + height);
     ctx.stroke();
   }
   ctx.restore();
 
   roundRect(ctx, left, top, width, height, radius);
   ctx.strokeStyle = isNegative ? coldTint("#111827", 0.2) : "#111827";
-  ctx.lineWidth = Math.max(2.5, Math.min(width, height) * 0.045);
+  ctx.lineWidth = Math.max(4, Math.min(width, height) * 0.07);
   ctx.stroke();
 }
 

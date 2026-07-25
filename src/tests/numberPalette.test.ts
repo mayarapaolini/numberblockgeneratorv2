@@ -44,17 +44,26 @@ describe("identity color: one dominant color per character, from its leading dig
 });
 
 describe("factor-revealing grid layout", () => {
-  it("matches the documented examples", () => {
+  it("matches the documented examples, preferring a taller/portrait orientation", () => {
     expect(factorGrid(1)).toMatchObject({ rows: 1, cols: 1 });
+    expect(factorGrid(2)).toMatchObject({ rows: 2, cols: 1 }); // a column of two, not a row
+    expect(factorGrid(3)).toMatchObject({ rows: 3, cols: 1 }); // a column of three, not a row
     expect(factorGrid(4)).toMatchObject({ rows: 2, cols: 2 });
-    expect(factorGrid(6)).toMatchObject({ rows: 2, cols: 3 });
-    expect(factorGrid(8)).toMatchObject({ rows: 2, cols: 4 });
+    expect(factorGrid(6)).toMatchObject({ rows: 3, cols: 2 });
+    expect(factorGrid(8)).toMatchObject({ rows: 4, cols: 2 });
     expect(factorGrid(9)).toMatchObject({ rows: 3, cols: 3 });
-    expect(factorGrid(12)).toMatchObject({ rows: 3, cols: 4 });
+    expect(factorGrid(12)).toMatchObject({ rows: 4, cols: 3 });
     expect(factorGrid(16)).toMatchObject({ rows: 4, cols: 4 });
-    expect(factorGrid(20)).toMatchObject({ rows: 4, cols: 5 });
+    expect(factorGrid(20)).toMatchObject({ rows: 5, cols: 4 });
     expect(factorGrid(25)).toMatchObject({ rows: 5, cols: 5 });
     expect(factorGrid(100)).toMatchObject({ rows: 10, cols: 10 });
+  });
+
+  it("never picks a wider-than-tall layout when a taller option exists", () => {
+    for (const n of [2, 3, 5, 6, 7, 8, 12, 15, 18, 20]) {
+      const grid = factorGrid(n);
+      expect(grid.rows).toBeGreaterThanOrEqual(grid.cols);
+    }
   });
 
   it("wraps primes into a near-square grid instead of one absurdly wide row", () => {
