@@ -83,6 +83,7 @@ export const MILESTONES: Milestone[] = [
   power(19, "10¹⁹", "A escala do primeiro planeta da Planet 100!"),
   power(20, "10²⁰", "A escala do segundo planeta da Planet 100!"),
   power(21, "10²¹", "A escala do terceiro planeta da Planet 100!"),
+  power(33, "10³³ (1 decilhão)", "Um decilhão! O número 1 seguido de 33 zeros — muito, muito maior que um trilhão."),
   power(100, "10¹⁰⁰", "Um googol! Mais que os átomos do universo conhecido."),
   power(1000, "10¹⁰⁰⁰", "Um número com mil zeros."),
   power(99999, "10⁹⁹⁹⁹⁹", "Um número com cem mil zeros, quase!"),
@@ -90,6 +91,14 @@ export const MILESTONES: Milestone[] = [
     id: "max",
     label: `10^${MAX_EXPONENT.toString()}`,
     description: "O maior número que este jogo consegue mostrar!",
+    category: "power",
+    value: () => fromPowerOfTen(MAX_EXPONENT),
+  },
+  {
+    id: "googolplex",
+    label: "Googolplex",
+    description:
+      "Um googolplex é 10 elevado a um googol — um 1 seguido de tantos zeros que nem este jogo (nem nenhum computador!) conseguiria escrevê-los todos. Aqui mostramos o maior número que este jogo alcança, só para você imaginar o quanto o googolplex real é ainda maior.",
     category: "power",
     value: () => fromPowerOfTen(MAX_EXPONENT),
   },
