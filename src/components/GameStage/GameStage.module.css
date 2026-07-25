@@ -94,6 +94,17 @@
 .characterArea {
   flex: 1 1 auto;
   min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+.characterSlot {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
   position: relative;
 }
 

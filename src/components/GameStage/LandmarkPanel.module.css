@@ -1,0 +1,44 @@
+.panel {
+  flex: 0 0 auto;
+  width: min(34%, 150px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.5rem;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  align-self: center;
+}
+
+@media (max-width: 420px) {
+  .panel {
+    width: min(38%, 110px);
+    padding: 0.4rem 0.35rem;
+  }
+}
+
+.artFrame {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.svg {
+  width: 100%;
+  height: 100%;
+}
+
+.caption {
+  margin: 0;
+  text-align: center;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.25;
+}

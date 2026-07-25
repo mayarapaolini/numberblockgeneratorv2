@@ -3,9 +3,9 @@ import { type HugeNumber } from "../../engine/HugeNumber";
 import { toSmallNumber } from "../../engine/visualLevel";
 import { findClosestWorldReference } from "../../engine/worldReferences";
 import { findClosestDepthReference, DEPTH_REFERENCES } from "../../engine/depthReferences";
-import styles from "./LandmarkBackdrop.module.css";
+import styles from "./LandmarkPanel.module.css";
 
-interface LandmarkBackdropProps {
+interface LandmarkPanelProps {
   value: HugeNumber;
 }
 
@@ -95,6 +95,45 @@ function Silhouette({ id, color }: { id: string; color: string }) {
           ))}
         </g>
       );
+    case "piramidedegize":
+      return (
+        <g>
+          <polygon points="10,150 50,50 90,150" fill={color} />
+          <polygon points="50,50 68,150 90,150" fill="#000" opacity="0.15" />
+          <line x1="30" y1="110" x2="70" y2="110" stroke="#fff" strokeWidth="1.2" opacity="0.35" />
+          <line x1="22" y1="130" x2="78" y2="130" stroke="#fff" strokeWidth="1.2" opacity="0.35" />
+        </g>
+      );
+    case "torredepisa":
+      return (
+        <g fill={color} transform="rotate(-6 50 150)">
+          <rect x="38" y="30" width="24" height="120" rx="3" />
+          {[46, 66, 86, 106, 126].map((y) => (
+            <line key={y} x1="38" y1={y} x2="62" y2={y} stroke="#fff" strokeWidth="1.4" opacity="0.4" />
+          ))}
+          <ellipse cx="50" cy="28" rx="14" ry="5" />
+        </g>
+      );
+    case "bigben":
+      return (
+        <g fill={color}>
+          <rect x="38" y="40" width="24" height="110" rx="2" />
+          <polygon points="34,40 66,40 50,18" />
+          <circle cx="50" cy="58" r="9" fill="#fff" opacity="0.9" />
+          <circle cx="50" cy="58" r="9" fill="none" stroke={color} strokeWidth="2" />
+          <line x1="50" y1="58" x2="50" y2="52" stroke={color} strokeWidth="1.6" />
+          <line x1="50" y1="58" x2="54" y2="60" stroke={color} strokeWidth="1.6" />
+        </g>
+      );
+    case "empirestate":
+      return (
+        <g fill={color}>
+          <polygon points="30,150 70,150 66,100 34,100" />
+          <polygon points="34,100 66,100 62,60 38,60" />
+          <polygon points="38,60 62,60 56,30 44,30" />
+          <line x1="50" y1="30" x2="50" y2="8" stroke={color} strokeWidth="2" />
+        </g>
+      );
     default:
       return null;
   }
@@ -109,6 +148,10 @@ const CUSTOM_SILHOUETTE_IDS = new Set([
   "girafa",
   "crianca",
   "formiga",
+  "piramidedegize",
+  "torredepisa",
+  "bigben",
+  "empirestate",
 ]);
 
 function OceanDepthGauge({ index, emoji }: { index: number; emoji: string }) {
@@ -116,14 +159,14 @@ function OceanDepthGauge({ index, emoji }: { index: number; emoji: string }) {
   const markerY = 12 + ratio * 130;
 
   return (
-    <svg className={styles.svg} viewBox="0 0 100 150" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+    <svg className={styles.svg} viewBox="0 0 100 150" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       <defs>
         <linearGradient id="oceanGradient" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#7dd3fc" />
           <stop offset="100%" stopColor="#082f49" />
         </linearGradient>
       </defs>
-      <rect x="4" y="4" width="92" height="142" rx="6" fill="url(#oceanGradient)" opacity="0.55" />
+      <rect x="4" y="4" width="92" height="142" rx="10" fill="url(#oceanGradient)" />
       <path
         d="M4,10 Q15,6 26,10 T48,10 T70,10 T96,10"
         fill="none"
@@ -134,15 +177,20 @@ function OceanDepthGauge({ index, emoji }: { index: number; emoji: string }) {
       {[0.25, 0.5, 0.75].map((t) => (
         <line key={t} x1="4" y1={10 + t * 130} x2="96" y2={10 + t * 130} stroke="#e0f2fe" strokeWidth="0.5" opacity="0.25" />
       ))}
-      <circle cx="50" cy={markerY} r="7" fill="#0f172a" opacity="0.55" />
-      <text x="50" y={markerY + 4} textAnchor="middle" fontSize="9">
+      <circle cx="50" cy={markerY} r="9" fill="#0f172a" opacity="0.6" />
+      <text x="50" y={markerY + 4.5} textAnchor="middle" fontSize="11">
         {emoji}
       </text>
     </svg>
   );
 }
 
-export function LandmarkBackdrop({ value }: LandmarkBackdropProps) {
+/**
+ * A small, opaque card beside the character showing what the current number
+ * compares to in the real world — a visible picture, not a faint watermark
+ * behind the character.
+ */
+export function LandmarkPanel({ value }: LandmarkPanelProps) {
   const isDepth = value.sign === -1;
 
   const worldReference = useMemo(
@@ -159,34 +207,38 @@ export function LandmarkBackdrop({ value }: LandmarkBackdropProps) {
   if (isDepth && depthReference) {
     const index = DEPTH_REFERENCES.findIndex((ref) => ref.id === depthReference.id);
     return (
-      <div className={styles.wrapper}>
-        <OceanDepthGauge index={index} emoji={depthReference.emoji} />
-        <span className={styles.label}>
-          {depthReference.emoji} {depthReference.name}
-        </span>
-      </div>
+      <aside className={styles.panel} aria-label={`Comparação de profundidade: ${depthReference.name}`}>
+        <div className={styles.artFrame}>
+          <OceanDepthGauge index={index} emoji={depthReference.emoji} />
+        </div>
+        <p className={styles.caption}>
+          <span aria-hidden="true">{depthReference.emoji}</span> {depthReference.name}
+        </p>
+      </aside>
     );
   }
 
   if (worldReference) {
     const hasCustomArt = CUSTOM_SILHOUETTE_IDS.has(worldReference.id);
     return (
-      <div className={styles.wrapper}>
-        {hasCustomArt ? (
-          <svg className={styles.svg} viewBox="0 0 100 160" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
-            <Silhouette id={worldReference.id} color="#1f2937" />
-          </svg>
-        ) : (
-          <svg className={styles.svg} viewBox="0 0 100 160" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
-            <text x="50" y="110" textAnchor="middle" fontSize="70">
-              {worldReference.emoji}
-            </text>
-          </svg>
-        )}
-        <span className={styles.label}>
-          {worldReference.emoji} {worldReference.name}
-        </span>
-      </div>
+      <aside className={styles.panel} aria-label={`Comparação de tamanho: ${worldReference.name}`}>
+        <div className={styles.artFrame}>
+          {hasCustomArt ? (
+            <svg className={styles.svg} viewBox="0 0 100 160" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+              <Silhouette id={worldReference.id} color="#334155" />
+            </svg>
+          ) : (
+            <svg className={styles.svg} viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+              <text x="50" y="66" textAnchor="middle" fontSize="52">
+                {worldReference.emoji}
+              </text>
+            </svg>
+          )}
+        </div>
+        <p className={styles.caption}>
+          <span aria-hidden="true">{worldReference.emoji}</span> {worldReference.name}
+        </p>
+      </aside>
     );
   }
 

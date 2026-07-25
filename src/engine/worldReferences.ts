@@ -43,10 +43,18 @@ export const WORLD_REFERENCES: WorldReference[] = [
   { id: "gato", name: "um gato", country: "em qualquer lugar do mundo", heightMeters: 0.3, emoji: "🐈", funFact: "Gatos conseguem pular até 6 vezes a própria altura." },
   { id: "crianca", name: "uma criança de 6 anos", country: "em qualquer lugar do mundo", heightMeters: 1.15, emoji: "🧒", funFact: "Assim como você, esse número também está crescendo!" },
   { id: "girafa", name: "uma girafa", country: "na savana africana", heightMeters: 5.5, emoji: "🦒", funFact: "A girafa é o animal terrestre mais alto do mundo." },
+  { id: "muralhadachina", name: "a Grande Muralha da China", country: "na China", heightMeters: 8, emoji: "🧱", funFact: "Tem mais de 21 mil quilômetros de comprimento — a maior construção já feita!" },
   { id: "casa", name: "uma casa de dois andares", country: "em qualquer lugar do mundo", heightMeters: 7, emoji: "🏠", funFact: "Duas girafas quase do tamanho dessa casa!" },
+  { id: "coliseu", name: "o Coliseu", country: "na Itália", heightMeters: 48, emoji: "🏛️", funFact: "Em Roma, tem quase 2 mil anos e ainda está de pé!" },
+  { id: "torredepisa", name: "a Torre de Pisa", country: "na Itália", heightMeters: 56, emoji: "🗼", funFact: "É famosa porque é tortinha — ela pende para um lado!" },
   { id: "cristoredentor", name: "o Cristo Redentor", country: "no Brasil", heightMeters: 38, emoji: "🗿", funFact: "Fica no alto do morro do Corcovado, no Rio de Janeiro." },
+  { id: "operadesydney", name: "a Ópera de Sydney", country: "na Austrália", heightMeters: 65, emoji: "🎭", funFact: "O telhado parece um monte de conchinhas ou velas de barco!" },
+  { id: "tajmahal", name: "o Taj Mahal", country: "na Índia", heightMeters: 73, emoji: "🕌", funFact: "Foi construído por um imperador em homenagem à sua esposa." },
   { id: "estatuadaliberdade", name: "a Estátua da Liberdade", country: "nos Estados Unidos", heightMeters: 93, emoji: "🗽", funFact: "Foi um presente da França para os Estados Unidos." },
+  { id: "bigben", name: "a Torre do Big Ben", country: "no Reino Unido", heightMeters: 96, emoji: "🕰️", funFact: "Big Ben é o apelido do sininho gigante lá dentro, não da torre!" },
+  { id: "piramidedegize", name: "a Grande Pirâmide de Gizé", country: "no Egito", heightMeters: 139, emoji: "🔺", funFact: "Foi construída há mais de 4 mil anos e é feita de pedras enormes." },
   { id: "torreeiffel", name: "a Torre Eiffel", country: "na França", heightMeters: 330, emoji: "🗼", funFact: "Fica em Paris e foi construída para uma feira mundial em 1889." },
+  { id: "empirestate", name: "o Empire State Building", country: "nos Estados Unidos", heightMeters: 443, emoji: "🏙️", funFact: "Em Nova York, já foi o prédio mais alto do mundo por quase 40 anos!" },
   { id: "burjkhalifa", name: "o Burj Khalifa", country: "nos Emirados Árabes Unidos", heightMeters: 828, emoji: "🏙️", funFact: "É o prédio mais alto do mundo, em Dubai!" },
   { id: "everest", name: "o Monte Everest", country: "entre o Nepal e a China", heightMeters: 8849, emoji: "🏔️", funFact: "É a montanha mais alta do mundo, acima do nível do mar." },
   { id: "estratosfera", name: "o topo da estratosfera", country: "bem acima de todo o mundo", heightMeters: 50_000, emoji: "🎈", funFact: "Balões meteorológicos voam por essas alturas." },
@@ -58,7 +66,8 @@ export const WORLD_REFERENCES: WorldReference[] = [
   { id: "sistemasolar", name: "o tamanho do Sistema Solar", country: "além de todos os planetas", heightMeters: 9_000_000_000_000, emoji: "🪐", funFact: "Inclui o Sol e todos os planetas, incluindo Netuno." },
   { id: "anoluz", name: "um ano-luz", country: "entre as estrelas", heightMeters: 9_460_730_000_000_000, emoji: "✨", funFact: "É a distância que a luz percorre em um ano inteiro!" },
   { id: "viaLactea", name: "o diâmetro da Via Láctea", country: "a nossa galáxia", heightMeters: 9.5e20, emoji: "🌌", funFact: "Nossa galáxia tem bilhões de estrelas, e o Sol é só uma delas." },
-  { id: "universo", name: "o tamanho do universo observável", country: "tudo o que já vimos", heightMeters: 8.8e26, emoji: "🌠", funFact: "Além disso, ninguém sabe o que existe — é maior do que conseguimos imaginar!" },
+  { id: "andromeda", name: "a distância até a galáxia de Andrômeda", country: "a galáxia vizinha", heightMeters: 2.4e22, emoji: "🌠", funFact: "É a galáxia mais próxima da nossa — e está vindo na nossa direção!" },
+  { id: "universo", name: "o tamanho do universo observável", country: "tudo o que já vimos", heightMeters: 8.8e26, emoji: "🌌", funFact: "Além disso, ninguém sabe o que existe — é maior do que conseguimos imaginar!" },
 ];
 
 /**

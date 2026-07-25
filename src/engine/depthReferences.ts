@@ -16,10 +16,12 @@ export interface DepthReference {
  */
 export const DEPTH_REFERENCES: DepthReference[] = [
   { id: "poca", name: "uma poça d'água", location: "no seu quintal", depthMeters: 0.05, emoji: "💧", funFact: "Rasinha, mal molha os pés!" },
+  { id: "banheira", name: "uma banheira", location: "em qualquer casa", depthMeters: 0.4, emoji: "🛁", funFact: "Dá pra sentar e a água cobre até a cintura!" },
   { id: "piscina", name: "uma piscina", location: "em qualquer lugar do mundo", depthMeters: 3, emoji: "🏊", funFact: "A parte funda de uma piscina normal." },
   { id: "lagorasoo", name: "um lago raso", location: "em qualquer lugar do mundo", depthMeters: 10, emoji: "🏞️", funFact: "Dá pra ver o fundo em água limpa." },
   { id: "mergulhador", name: "um mergulhador com cilindro", location: "em recifes de coral", depthMeters: 18, emoji: "🤿", funFact: "É a profundidade máxima recomendada para mergulho recreativo." },
   { id: "submarino", name: "um submarino", location: "no oceano", depthMeters: 300, emoji: "🚤", funFact: "Submarinos militares conseguem mergulhar bem fundo." },
+  { id: "cachalote", name: "um cachalote mergulhando", location: "no oceano aberto", depthMeters: 2000, emoji: "🐳", funFact: "Cachalotes prendem a respiração por mais de uma hora para caçar lá embaixo!" },
   { id: "titanic", name: "os destroços do Titanic", location: "no Oceano Atlântico", depthMeters: 3800, emoji: "🚢", funFact: "O navio afundou em 1912 e está lá até hoje." },
   { id: "fossaportorico", name: "a Fossa de Porto Rico", location: "no Oceano Atlântico", depthMeters: 8400, emoji: "🌊", funFact: "É o ponto mais profundo do Oceano Atlântico." },
   { id: "fossamarianas", name: "a Fossa das Marianas", location: "no Oceano Pacífico", depthMeters: 10_935, emoji: "🐙", funFact: "É o ponto mais profundo já medido em todos os oceanos do mundo!" },
