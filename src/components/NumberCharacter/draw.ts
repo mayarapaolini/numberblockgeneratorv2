@@ -316,11 +316,23 @@ function drawGroupedBody(ctx: CanvasRenderingContext2D, cx: number, baseY: numbe
   const ones = abs % 10;
   const plan = identityColorPlan(abs);
 
+  // Every tier is made of perfect square cells - like real unit blocks you
+  // could stack - only the cell *size* grows with place value, never the
+  // aspect ratio, so nothing reads as a flat bar or plank.
+  const THOUSANDS_CELL = 1.3;
+  const HUNDREDS_CELL = 1.05;
+  const TENS_CELL = 0.8;
+  const ONES_CELL = 0.55;
+
   const thousandsRows = thousands > 0 ? Math.ceil(thousands / 10) : 0;
+  const hundredsRows = hundreds > 0 ? Math.ceil(hundreds / 5) : 0;
   const idealHeight =
-    thousandsRows * unit * 1.3 + (hundreds > 0 ? unit * 1.1 : 0) + (tens > 0 ? unit * 0.85 : 0) + unit * 0.55;
+    thousandsRows * unit * THOUSANDS_CELL +
+    hundredsRows * unit * HUNDREDS_CELL +
+    (tens > 0 ? unit * TENS_CELL : 0) +
+    unit * ONES_CELL;
   const widestRowBlocks = Math.min(10, Math.max(thousands, Math.min(hundreds, 5), tens, ones, 1));
-  const idealWidth = widestRowBlocks * unit * 1.7 * 1.15;
+  const idealWidth = widestRowBlocks * unit * THOUSANDS_CELL * 1.15;
   const shrinkH = Math.min(1, maxBodyHeight / Math.max(idealHeight, 1));
   const shrinkW = Math.min(1, maxBodyWidth / Math.max(idealWidth, 1));
   const shrink = Math.min(shrinkH, shrinkW);
@@ -329,25 +341,25 @@ function drawGroupedBody(ctx: CanvasRenderingContext2D, cx: number, baseY: numbe
 
   let y = baseY;
   let widestTierWidth = 0;
-  const drawTier = (count: number, cellW: number, cellH: number, perRow: number) => {
+  const drawTier = (count: number, cellSize: number, perRow: number) => {
     if (count <= 0) return;
     const rows = Math.ceil(count / perRow);
     const cols = Math.min(perRow, count);
-    const width = cols * cellW;
-    const height = rows * cellH;
+    const width = cols * cellSize;
+    const height = rows * cellSize;
     const left = cx - width / 2;
     const top = y - height;
-    const radius = Math.min(cellW, cellH) * 0.16;
+    const radius = cellSize * 0.16;
     paintIdentityBody(ctx, left, top, width, height, radius, plan, rows, cols, isNegative);
     paintBodyFinish(ctx, left, top, width, height, radius, rows, cols, plan, isNegative);
     widestTierWidth = Math.max(widestTierWidth, width);
     y = top - tierGap;
   };
 
-  drawTier(thousands, u * 1.7, u * 1.3, 10);
-  drawTier(hundreds, u * 1.6, u * 1.1, 5);
-  drawTier(tens, u * 0.9, u * 0.85, 10);
-  drawTier(Math.max(1, ones), u * 0.5, u * 0.5, 10);
+  drawTier(thousands, u * THOUSANDS_CELL, 10);
+  drawTier(hundreds, u * HUNDREDS_CELL, 5);
+  drawTier(tens, u * TENS_CELL, 10);
+  drawTier(Math.max(1, ones), u * ONES_CELL, 10);
 
   const headGap = u * 0.55;
   return { headTopY: y - headGap, headSize: u * 0.9, top: y, bottom: baseY, gridWidth: widestTierWidth };
