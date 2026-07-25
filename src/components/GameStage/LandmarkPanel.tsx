@@ -3,6 +3,7 @@ import { type HugeNumber } from "../../engine/HugeNumber";
 import { toSmallNumber } from "../../engine/visualLevel";
 import { findClosestWorldReference } from "../../engine/worldReferences";
 import { findClosestDepthReference, DEPTH_REFERENCES } from "../../engine/depthReferences";
+import { findClosestTemperatureReference, TEMPERATURE_REFERENCES } from "../../engine/temperatureReferences";
 import styles from "./LandmarkPanel.module.css";
 
 interface LandmarkPanelProps {
@@ -185,6 +186,29 @@ function OceanDepthGauge({ index, emoji }: { index: number; emoji: string }) {
   );
 }
 
+function ThermometerGauge({ index, emoji }: { index: number; emoji: string }) {
+  const ratio = index / Math.max(1, TEMPERATURE_REFERENCES.length - 1);
+  const markerY = 12 + ratio * 130;
+
+  return (
+    <svg className={styles.svg} viewBox="0 0 100 150" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <defs>
+        <linearGradient id="thermoGradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#bae6fd" />
+          <stop offset="100%" stopColor="#312e81" />
+        </linearGradient>
+      </defs>
+      <rect x="42" y="6" width="16" height="118" rx="8" fill="none" stroke="#e2e8f0" strokeWidth="3" />
+      <circle cx="50" cy="134" r="16" fill="none" stroke="#e2e8f0" strokeWidth="3" />
+      <rect x="45" y={markerY} width="10" height={128 - markerY + 10} rx="5" fill="url(#thermoGradient)" />
+      <circle cx="50" cy="134" r="12" fill="url(#thermoGradient)" />
+      <text x="50" y={markerY - 6} textAnchor="middle" fontSize="11">
+        {emoji}
+      </text>
+    </svg>
+  );
+}
+
 /**
  * A small, opaque card beside the character showing what the current number
  * compares to in the real world — a visible picture, not a faint watermark
@@ -201,20 +225,35 @@ export function LandmarkPanel({ value }: LandmarkPanelProps) {
     () => (isDepth ? findClosestDepthReference(Math.abs(toSmallNumber(value))) : null),
     [value, isDepth],
   );
+  const temperatureReference = useMemo(
+    () => (isDepth ? findClosestTemperatureReference(Math.abs(toSmallNumber(value))) : null),
+    [value, isDepth],
+  );
 
   if (value.sign === 0) return null;
 
-  if (isDepth && depthReference) {
-    const index = DEPTH_REFERENCES.findIndex((ref) => ref.id === depthReference.id);
+  if (isDepth && depthReference && temperatureReference) {
+    const depthIndex = DEPTH_REFERENCES.findIndex((ref) => ref.id === depthReference.id);
+    const temperatureIndex = TEMPERATURE_REFERENCES.findIndex((ref) => ref.id === temperatureReference.id);
     return (
-      <aside className={styles.panel} aria-label={`Comparação de profundidade: ${depthReference.name}`}>
-        <div className={styles.artFrame}>
-          <OceanDepthGauge index={index} emoji={depthReference.emoji} />
-        </div>
-        <p className={styles.caption}>
-          <span aria-hidden="true">{depthReference.emoji}</span> {depthReference.name}
-        </p>
-      </aside>
+      <div className={styles.stack}>
+        <aside className={styles.panel} aria-label={`Comparação de profundidade: ${depthReference.name}`}>
+          <div className={`${styles.artFrame} ${styles.artFrameCompact}`}>
+            <OceanDepthGauge index={depthIndex} emoji={depthReference.emoji} />
+          </div>
+          <p className={styles.caption}>
+            <span aria-hidden="true">{depthReference.emoji}</span> {depthReference.name}
+          </p>
+        </aside>
+        <aside className={styles.panel} aria-label={`Comparação de temperatura: ${temperatureReference.name}`}>
+          <div className={`${styles.artFrame} ${styles.artFrameCompact}`}>
+            <ThermometerGauge index={temperatureIndex} emoji={temperatureReference.emoji} />
+          </div>
+          <p className={styles.caption}>
+            <span aria-hidden="true">{temperatureReference.emoji}</span> {temperatureReference.name}
+          </p>
+        </aside>
+      </div>
     );
   }
 

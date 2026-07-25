@@ -1,6 +1,7 @@
 import { type HugeNumber } from "./HugeNumber";
 import { toSmallNumber } from "./visualLevel";
 import { describeDepthComparison } from "./depthReferences";
+import { describeTemperatureComparison } from "./temperatureReferences";
 
 const MAGNITUDE_CAP = 30;
 
@@ -95,7 +96,8 @@ export function findClosestWorldReference(value: HugeNumber): WorldReference {
 
 export function describeWorldComparison(value: HugeNumber): string {
   if (value.sign === -1) {
-    return describeDepthComparison(Math.abs(toSmallNumber(value)));
+    const abs = Math.abs(toSmallNumber(value));
+    return `${describeDepthComparison(abs)} ${describeTemperatureComparison(abs)}`;
   }
   if (value.sign === 0) {
     return "📏 Zero é o ponto de partida — nem para cima, nem para baixo!";
