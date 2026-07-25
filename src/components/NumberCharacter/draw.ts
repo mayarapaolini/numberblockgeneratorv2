@@ -23,15 +23,19 @@ export interface DrawParams {
   hueSeed: number; // 0..1 deterministic seed for cosmic color variety
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+function addRoundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   const radius = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
-  ctx.beginPath();
   ctx.moveTo(x + radius, y);
   ctx.arcTo(x + w, y, x + w, y + h, radius);
   ctx.arcTo(x + w, y + h, x, y + h, radius);
   ctx.arcTo(x, y + h, x, y, radius);
   ctx.arcTo(x, y, x + w, y, radius);
   ctx.closePath();
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  addRoundRectPath(ctx, x, y, w, h, r);
 }
 
 /** Simple, mobile eyebrow above one eye — the main way expressions read as "alive". */
@@ -279,6 +283,33 @@ function paintBodyFinish(
 }
 
 /**
+ * Zero has no blocks - it gets its own shape instead of borrowing "1"'s
+ * filled square: a hollow ring, the letter "O" of counting, colored neutral
+ * (no digit owns zero's identity) so it's instantly distinct from every
+ * other number at a glance, before even reading the digits.
+ */
+function drawZeroBody(ctx: CanvasRenderingContext2D, cx: number, baseY: number, unit: number, isNegative: boolean, maxBodyHeight: number, maxBodyWidth: number) {
+  const size = Math.min(unit * 1.5, maxBodyHeight, maxBodyWidth);
+  const left = cx - size / 2;
+  const top = baseY - size;
+  const outerRadius = size * 0.4;
+  const thickness = size * 0.24;
+  const innerRadius = Math.max(0, outerRadius - thickness);
+
+  ctx.beginPath();
+  addRoundRectPath(ctx, left, top, size, size, outerRadius);
+  addRoundRectPath(ctx, left + thickness, top + thickness, size - thickness * 2, size - thickness * 2, innerRadius);
+  ctx.fillStyle = isNegative ? coldTint("#e2e8f0", 0.35) : "#e2e8f0";
+  ctx.fill("evenodd");
+
+  ctx.strokeStyle = isNegative ? coldTint("#111827", 0.2) : "#111827";
+  ctx.lineWidth = Math.max(4, size * 0.07);
+  ctx.stroke();
+
+  return { headTopY: top, headSize: size, top, bottom: baseY, gridWidth: size };
+}
+
+/**
  * Literal body for 1-100: a single unified square/rectangle - one being, not
  * a collection of separate blocks - subdivided by thin discrete grid lines
  * into a rows x cols layout that reveals factors (12 -> 3x4, 16 -> 4x4,
@@ -491,8 +522,10 @@ export function drawCharacter(canvas: HTMLCanvasElement, params: DrawParams) {
     body = drawSymbolicBody(ctx, cx, baseY, unit, params.magnitudeRatio, params.isNegative, params.idleTime);
   } else if (params.level === 2) {
     body = drawGroupedBody(ctx, cx, baseY, unit, params.smallCount, params.isNegative, maxBodyHeight, maxBodyWidth);
+  } else if (params.smallCount === 0) {
+    body = drawZeroBody(ctx, cx, baseY, unit, params.isNegative, maxBodyHeight, maxBodyWidth);
   } else {
-    body = drawBlockBody(ctx, cx, baseY, unit, params.smallCount === 0 ? 1 : params.smallCount, params.isNegative, maxBodyHeight, maxBodyWidth);
+    body = drawBlockBody(ctx, cx, baseY, unit, params.smallCount, params.isNegative, maxBodyHeight, maxBodyWidth);
   }
 
   drawArms(ctx, cx, body.top, body.bottom, unit * 2.2, params.level >= 3 ? symbolicArmColor : "#475569", sway);
