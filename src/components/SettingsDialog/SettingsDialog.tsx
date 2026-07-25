@@ -85,17 +85,32 @@ export function SettingsDialog({ settings, narrationSupported, onChange, onClear
         </div>
 
         {narrationSupported ? (
-          <div className={styles.row}>
-            <label htmlFor="setting-narration">Narração por voz</label>
-            <input
-              id="setting-narration"
-              className={styles.switch}
-              type="checkbox"
-              checked={settings.narrationOn}
-              onChange={(e) => onChange({ narrationOn: e.target.checked })}
-              aria-label="Ligar ou desligar narração por voz"
-            />
-          </div>
+          <>
+            <div className={styles.row}>
+              <label htmlFor="setting-narration">Narração por voz</label>
+              <input
+                id="setting-narration"
+                className={styles.switch}
+                type="checkbox"
+                checked={settings.narrationOn}
+                onChange={(e) => onChange({ narrationOn: e.target.checked })}
+                aria-label="Ligar ou desligar narração por voz"
+              />
+            </div>
+            <div className={styles.row}>
+              <label htmlFor="setting-narration-lang">Idioma da narração</label>
+              <select
+                id="setting-narration-lang"
+                className={styles.select}
+                value={settings.narrationLang}
+                onChange={(e) => onChange({ narrationLang: e.target.value as Settings["narrationLang"] })}
+                aria-label="Escolher idioma da narração"
+              >
+                <option value="pt-BR">Português</option>
+                <option value="en-US">English</option>
+              </select>
+            </div>
+          </>
         ) : null}
 
         <button

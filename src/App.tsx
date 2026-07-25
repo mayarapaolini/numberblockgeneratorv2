@@ -15,6 +15,7 @@ import { SettingsDialog } from "./components/SettingsDialog/SettingsDialog";
 import { GreenScreen } from "./components/GreenScreen/GreenScreen";
 import type { HugeNumber } from "./engine/HugeNumber";
 import { nameHugeNumber } from "./engine/numberNames";
+import { nameHugeNumberEn } from "./engine/numberNamesEn";
 import { getEducationalTip } from "./engine/education";
 import { isPowerOfTen, isExactlyHundred, getVisualLevel } from "./engine/visualLevel";
 import { EXPONENT_LANDMARKS } from "./modes/exponentialMode";
@@ -55,7 +56,9 @@ export default function App() {
       play("cosmic");
     }
     if (state.settings.narrationOn) {
-      speak(nameHugeNumber(state.value));
+      const text =
+        state.settings.narrationLang === "en-US" ? nameHugeNumberEn(state.value) : nameHugeNumber(state.value);
+      speak(text, state.settings.narrationLang);
     }
     // Only the value itself should retrigger reactions, not every settings change.
     // eslint-disable-next-line react-hooks/exhaustive-deps

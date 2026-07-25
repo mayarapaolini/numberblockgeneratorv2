@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { serializeHugeNumber, deserializeHugeNumber } from "../engine/HugeNumber";
-import type { GameState } from "../types/game";
+import { DEFAULT_SETTINGS, type GameState } from "../types/game";
 
 const STORAGE_KEY = "numberlab.state.v1";
 const SAVE_DEBOUNCE_MS = 400;
@@ -33,7 +33,7 @@ export function loadPersistedState(): Partial<GameState> | null {
       value: deserializeHugeNumber(parsed.value),
       mode: parsed.mode,
       exponent: BigInt(parsed.exponent),
-      settings: parsed.settings,
+      settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
       auto: { ...parsed.auto, running: false },
       history: parsed.history.map(deserializeHugeNumber),
       future: [],

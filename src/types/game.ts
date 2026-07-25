@@ -26,11 +26,14 @@ export interface AutoModeConfig {
   running: boolean;
 }
 
+export type NarrationLang = "pt-BR" | "en-US";
+
 export interface Settings {
   volume: number;
   soundOn: boolean;
   reduceMotion: boolean;
   narrationOn: boolean;
+  narrationLang: NarrationLang;
   hideEffects: boolean;
 }
 
@@ -39,6 +42,7 @@ export const DEFAULT_SETTINGS: Settings = {
   soundOn: true,
   reduceMotion: false,
   narrationOn: false,
+  narrationLang: "pt-BR",
   hideEffects: false,
 };
 
