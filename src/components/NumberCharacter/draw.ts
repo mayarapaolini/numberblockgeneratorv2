@@ -349,21 +349,31 @@ function drawGroupedBody(ctx: CanvasRenderingContext2D, cx: number, baseY: numbe
 
   // Every tier is made of perfect square cells - like real unit blocks you
   // could stack - only the cell *size* grows with place value, never the
-  // aspect ratio, so nothing reads as a flat bar or plank.
+  // aspect ratio. Each tier's own count is also arranged into a near-square,
+  // portrait-biased grid (never a single flat row) so nothing reads as a
+  // flat bar or plank - it always reads as a compact, stackable block.
   const THOUSANDS_CELL = 1.3;
   const HUNDREDS_CELL = 1.05;
   const TENS_CELL = 0.8;
   const ONES_CELL = 0.55;
 
-  const thousandsRows = thousands > 0 ? Math.ceil(thousands / 10) : 0;
-  const hundredsRows = hundreds > 0 ? Math.ceil(hundreds / 5) : 0;
+  const thousandsGrid = thousands > 0 ? factorGrid(thousands, 10) : { rows: 0, cols: 0 };
+  const hundredsGrid = hundreds > 0 ? factorGrid(hundreds, 10) : { rows: 0, cols: 0 };
+  const tensGrid = tens > 0 ? factorGrid(tens, 10) : { rows: 0, cols: 0 };
+  const onesGrid = factorGrid(Math.max(1, ones), 10);
+
   const idealHeight =
-    thousandsRows * unit * THOUSANDS_CELL +
-    hundredsRows * unit * HUNDREDS_CELL +
-    (tens > 0 ? unit * TENS_CELL : 0) +
-    unit * ONES_CELL;
-  const widestRowBlocks = Math.min(10, Math.max(thousands, Math.min(hundreds, 5), tens, ones, 1));
-  const idealWidth = widestRowBlocks * unit * THOUSANDS_CELL * 1.15;
+    thousandsGrid.rows * unit * THOUSANDS_CELL +
+    hundredsGrid.rows * unit * HUNDREDS_CELL +
+    tensGrid.rows * unit * TENS_CELL +
+    onesGrid.rows * unit * ONES_CELL;
+  const idealWidth = Math.max(
+    thousandsGrid.cols * unit * THOUSANDS_CELL,
+    hundredsGrid.cols * unit * HUNDREDS_CELL,
+    tensGrid.cols * unit * TENS_CELL,
+    onesGrid.cols * unit * ONES_CELL,
+    unit,
+  );
   const shrinkH = Math.min(1, maxBodyHeight / Math.max(idealHeight, 1));
   const shrinkW = Math.min(1, maxBodyWidth / Math.max(idealWidth, 1));
   const shrink = Math.min(shrinkH, shrinkW);
@@ -372,10 +382,9 @@ function drawGroupedBody(ctx: CanvasRenderingContext2D, cx: number, baseY: numbe
 
   let y = baseY;
   let widestTierWidth = 0;
-  const drawTier = (count: number, cellSize: number, perRow: number) => {
+  const drawTier = (count: number, cellSize: number) => {
     if (count <= 0) return;
-    const rows = Math.ceil(count / perRow);
-    const cols = Math.min(perRow, count);
+    const { rows, cols } = factorGrid(count, 10);
     const width = cols * cellSize;
     const height = rows * cellSize;
     const left = cx - width / 2;
@@ -387,10 +396,10 @@ function drawGroupedBody(ctx: CanvasRenderingContext2D, cx: number, baseY: numbe
     y = top - tierGap;
   };
 
-  drawTier(thousands, u * THOUSANDS_CELL, 10);
-  drawTier(hundreds, u * HUNDREDS_CELL, 5);
-  drawTier(tens, u * TENS_CELL, 10);
-  drawTier(Math.max(1, ones), u * ONES_CELL, 10);
+  drawTier(thousands, u * THOUSANDS_CELL);
+  drawTier(hundreds, u * HUNDREDS_CELL);
+  drawTier(tens, u * TENS_CELL);
+  drawTier(Math.max(1, ones), u * ONES_CELL);
 
   const headGap = u * 0.55;
   return { headTopY: y - headGap, headSize: u * 0.9, top: y, bottom: baseY, gridWidth: widestTierWidth };
